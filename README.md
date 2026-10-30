@@ -1,6 +1,6 @@
 Early-stage demo, under active development.
 
-# SyllaCal
+# Syllab
 
 SyllaCal takes a course syllabus PDF and generates an `.ics` calendar file with assignment and exam deadlines.
 
