@@ -137,7 +137,7 @@ A held-out syllabus is still needed.
 Question: does any real syllabus write a deadline as "Week N Friday" (or "Wk N Fri", "Friday of Week N"), with no calendar date next to it? That is the only phrase `resolve()` can turn into a date. If none do, wiring it into `POST /api/syllabus` does not change what users get.
 
 Text extracted with PDFBox from the local files, then read for week-number schedules.
-
+～
 | Syllabus | What the schedule actually says | "Week N" + weekday, no date |
 |---|---|---|
 | MATH 114 (F26) | Week rows already include the range, e.g. `6 (9/28-30) … Exam 1` | No |
