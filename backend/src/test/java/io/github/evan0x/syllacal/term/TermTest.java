@@ -3,33 +3,53 @@ package io.github.evan0x.syllacal.term;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TermTest {
 
-    @Test
-    void overlapsReturnsTrueWhenDateRangesIntersect() {
-        Term fall = new Term("Fall Semester", LocalDate.of(2025, 8, 25), LocalDate.of(2025, 12, 18));
-        Term finals = new Term("Finals Week", LocalDate.of(2025, 12, 10), LocalDate.of(2025, 12, 20));
+    private static final ZoneId ZONE = ZoneId.of("America/New_York");
 
-        assertTrue(fall.overlaps(finals));
+    @Test
+    void keepsMondayStartEndAndSkippedWeeks() {
+        Set<Integer> skipped = new HashSet<>();
+        skipped.add(8);
+
+        Term fall = new Term(
+                LocalDate.of(2025, 8, 25),
+                LocalDate.of(2025, 12, 18),
+                skipped,
+                ZONE);
+
+        skipped.add(9);
+
+        assertEquals(LocalDate.of(2025, 8, 25), fall.firstDay());
+        assertEquals(LocalDate.of(2025, 12, 18), fall.lastDay());
+        assertEquals(Set.of(8), fall.skippedCalendarWeeks());
+        assertEquals(ZONE, fall.zone());
     }
 
     @Test
-    void containsReturnsTrueOnlyForDatesInsideTheTerm() {
-        Term spring = new Term("Spring Semester", LocalDate.of(2025, 1, 13), LocalDate.of(2025, 5, 9));
+    void rejectsFirstDayThatIsNotMonday() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> new Term(
+                LocalDate.of(2025, 8, 26),
+                LocalDate.of(2025, 12, 18),
+                Set.of(),
+                ZONE));
 
-        assertTrue(spring.contains(LocalDate.of(2025, 2, 14)));
-        assertFalse(spring.contains(LocalDate.of(2025, 12, 1)));
+        assertEquals("firstDay must be a Monday: 2025-08-26", error.getMessage());
     }
 
     @Test
-    void getDurationInDaysCountsWholeTermLength() {
-        Term summer = new Term("Summer Term", LocalDate.of(2025, 6, 1), LocalDate.of(2025, 6, 10));
-
-        assertEquals(9, summer.getDurationInDays());
+    void rejectsLastDayBeforeFirstDay() {
+        assertThrows(IllegalArgumentException.class, () -> new Term(
+                LocalDate.of(2025, 8, 25),
+                LocalDate.of(2025, 8, 18),
+                Set.of(),
+                ZONE));
     }
 }
