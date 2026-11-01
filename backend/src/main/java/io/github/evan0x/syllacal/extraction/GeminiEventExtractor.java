@@ -72,6 +72,7 @@ public class GeminiEventExtractor implements EventExtractor {
 		Map<String, Object> requestBody = buildRequest(systemInstruction, syllabusText);
 		String responseBody = callWithRetry(requestBody);
 		String modelJson = extractModelText(responseBody);
+		System.out.println(modelJson);
 		return parseEventsJson(modelJson);
 	}
 
@@ -181,6 +182,8 @@ public class GeminiEventExtractor implements EventExtractor {
 				"enum", List.of("ASSIGNMENT", "EXAM", "QUIZ", "PROJECT", "OTHER")));
 		eventProperties.put("date", nullableString());
 		eventProperties.put("time", nullableString());
+		eventProperties.put("end_time", nullableString());
+		eventProperties.put("location", nullableString());
 		eventProperties.put("weight_percent", nullableNumber());
 		eventProperties.put("confidence", Map.of(
 				"type", "STRING",
@@ -191,7 +194,7 @@ public class GeminiEventExtractor implements EventExtractor {
 		eventSchema.put("type", "OBJECT");
 		eventSchema.put("properties", eventProperties);
 		eventSchema.put("required", List.of(
-				"title", "type", "date", "time", "weight_percent", "confidence", "source_text"));
+				"title", "type", "date", "time", "end_time", "location", "weight_percent", "confidence", "source_text"));
 
 		Map<String, Object> eventsArray = new LinkedHashMap<>();
 		eventsArray.put("type", "ARRAY");

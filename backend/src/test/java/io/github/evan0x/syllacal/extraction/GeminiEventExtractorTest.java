@@ -32,6 +32,8 @@ class GeminiEventExtractorTest {
 				      "type": "EXAM",
 				      "date": "2026-09-30",
 				      "time": "08:30",
+				      "end_time": "10:15",
+				      "location": "Room 101",
 				      "weight_percent": 20,
 				      "confidence": "HIGH",
 				      "source_text": "Exam 1 (Ch 6-7.4)"
@@ -57,6 +59,8 @@ class GeminiEventExtractorTest {
 		assertEquals("EXAM", exam.type());
 		assertEquals(LocalDate.of(2026, 9, 30), exam.date());
 		assertEquals(LocalTime.of(8, 30), exam.time());
+		assertEquals(LocalTime.of(10, 15), exam.endTime());
+		assertEquals("Room 101", exam.location());
 		assertEquals(20.0, exam.weightPercent());
 		assertEquals("HIGH", exam.confidence());
 		assertEquals("Exam 1 (Ch 6-7.4)", exam.sourceText());
@@ -64,6 +68,8 @@ class GeminiEventExtractorTest {
 		ExtractedEvent participation = events.get(1);
 		assertNull(participation.date());
 		assertNull(participation.time());
+		assertNull(participation.endTime());
+		assertNull(participation.location());
 		assertEquals(10.0, participation.weightPercent());
 	}
 

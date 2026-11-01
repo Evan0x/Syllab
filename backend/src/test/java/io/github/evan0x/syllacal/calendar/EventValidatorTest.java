@@ -60,6 +60,6 @@ class EventValidatorTest {
 	}
 
 	private static ExtractedEvent event(String title, LocalDate date, String confidence) {
-		return new ExtractedEvent(title, "EXAM", date, null, 20.0, confidence, "source");
+		return new ExtractedEvent(title, "EXAM", date, null, null, null, 20.0, confidence, "source");
 	}
 }

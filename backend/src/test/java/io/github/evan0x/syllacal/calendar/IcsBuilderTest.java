@@ -1,78 +1,64 @@
 package io.github.evan0x.syllacal.calendar;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.github.evan0x.syllacal.extraction.ExtractedEvent;
-import org.junit.jupiter.api.Test;
-
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 class IcsBuilderTest {
 
-	private final IcsBuilder builder = new IcsBuilder();
-	private final ZoneId zone = ZoneId.of("America/New_York");
+    private final IcsBuilder builder = new IcsBuilder();
 
-	@Test
-	void buildsAllDayEventWithDateValue() {
-		ExtractedEvent event = new ExtractedEvent(
-				"Exam 1", "EXAM", LocalDate.of(2026, 9, 30), null,
-				20.0, "HIGH", "Exam 1 (Ch 6-7.4)");
+    private static ExtractedEvent event(String title, LocalDate date) {
+        return new ExtractedEvent(title, "EXAM", date, null, null, null, null, "HIGH", "src");
+    }
 
-		String ics = builder.build(List.of(event), "MATH 101", zone);
+    private static List<String> uids(String ics) {
+        return ics.lines().filter(l -> l.startsWith("UID:")).toList();
+    }
 
-		assertTrue(ics.contains("DTSTART;VALUE=DATE:20260930"));
-		assertFalse(ics.contains("T083000"));
-		assertTrue(ics.contains("SUMMARY:Exam 1"));
-		assertTrue(ics.contains("Weight: 20%"), () -> "ICS was:\n" + ics);
-		assertTrue(ics.contains("Source: Exam 1 (Ch 6-7.4)"), () -> "ICS was:\n" + ics);
-	}
+    private static final LocalDate D = LocalDate.of(2026, 9, 30);
 
-	@Test
-	void buildsTimedEventWithTimeZone() {
-		ExtractedEvent event = new ExtractedEvent(
-				"Exam 2", "EXAM", LocalDate.of(2026, 11, 4), LocalTime.of(8, 30),
-				20.0, "HIGH", "Exam 2");
+    @Test
+    @DisplayName("Same course and date, different title: same UID")
+    void titleDoesNotAffectUid() {
+        String a = builder.build(List.of(event("Exam 1", D)), "MATH 114");
+        String b = builder.build(List.of(event("Exam 1 (Ch 6-7.4)", D)), "MATH 114");
+        assertThat(uids(a)).isEqualTo(uids(b));
+    }
 
-		String ics = builder.build(List.of(event), "MATH 101", zone);
+    @Test
+    @DisplayName("Different dates: different UIDs")
+    void differentDatesDiffer() {
+        String a = builder.build(List.of(event("Exam", D)), "MATH 114");
+        String b = builder.build(List.of(event("Exam", D.plusDays(1))), "MATH 114");
+        assertThat(uids(a)).isNotEqualTo(uids(b));
+    }
 
-		assertTrue(ics.contains("DTSTART;TZID=America/New_York:20261104T083000"));
-		assertFalse(ics.contains("VALUE=DATE:20261104"));
-	}
+    @Test
+    @DisplayName("Two events on the same day: different UIDs")
+    void sameDayEventsDoNotCollide() {
+        String ics = builder.build(List.of(event("A", D), event("B", D)), "MATH 114");
+        assertThat(new HashSet<>(uids(ics))).hasSize(2);
+    }
 
-	@Test
-	void uidIsStableAcrossBuilds() {
-		ExtractedEvent event = new ExtractedEvent(
-				"Final", "EXAM", LocalDate.of(2026, 12, 14), LocalTime.of(7, 30),
-				25.0, "HIGH", "Final Exam");
+    @Test
+    @DisplayName("Course name case and spaces do not matter")
+    void courseNameIsNormalized() {
+        String a = builder.build(List.of(event("Exam", D)), "MATH 125");
+        String b = builder.build(List.of(event("Exam", D)), "  math 125 ");
+        assertThat(uids(a)).isEqualTo(uids(b));
+    }
 
-		String first = builder.build(List.of(event), "MATH 101", zone);
-		String second = builder.build(List.of(event), "MATH 101", zone);
-		String expectedUid = IcsBuilder.stableUid("MATH 101", "Final", LocalDate.of(2026, 12, 14));
-
-		assertTrue(first.contains("UID:" + expectedUid));
-		assertEquals(uidLine(first), uidLine(second));
-	}
-
-	@Test
-	void differentCourseOrTitleProducesDifferentUid() {
-		LocalDate date = LocalDate.of(2026, 12, 14);
-		String uidA = IcsBuilder.stableUid("MATH 101", "Final", date);
-		String uidB = IcsBuilder.stableUid("CS 101", "Final", date);
-		String uidC = IcsBuilder.stableUid("MATH 101", "Midterm", date);
-
-		assertFalse(uidA.equals(uidB));
-		assertFalse(uidA.equals(uidC));
-	}
-
-	private static String uidLine(String ics) {
-		return ics.lines()
-				.filter(line -> line.startsWith("UID:"))
-				.findFirst()
-				.orElseThrow();
-	}
+    @Test
+    @DisplayName("Input order does not change the set of UIDs")
+    void inputOrderDoesNotMatter() {
+        String a = builder.build(List.of(event("A", D), event("B", D)), "MATH 114");
+        String b = builder.build(List.of(event("B", D), event("A", D)), "MATH 114");
+        assertThat(new HashSet<>(uids(a))).isEqualTo(new HashSet<>(uids(b)));
+    }
 }

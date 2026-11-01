@@ -10,6 +10,8 @@ public record ExtractedEvent(
 		String type,
 		LocalDate date,
 		LocalTime time,
+		@JsonProperty("end_time") LocalTime endTime,
+		String location,
 		@JsonProperty("weight_percent") Double weightPercent,
 		String confidence,
 		@JsonProperty("source_text") String sourceText

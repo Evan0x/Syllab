@@ -145,6 +145,8 @@ class SyllabusControllerTest {
 						"EXAM",
 						termStart.plusDays(7),
 						null,
+						null,
+						null,
 						20.0,
 						"HIGH",
 						"Exam 1"));
