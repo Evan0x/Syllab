@@ -88,6 +88,33 @@ Among the 9 events the model did return across the three syllabi, 0 had a wrong 
 - **Hallucinated dates:** none observed in 3 syllabi.
 - **Duplicates:** not observed yet.
 
+## Round 1: prompt and schema change (deliverables, end time, location)
+
+Changes: the prompt now asks for all dated deliverables, not only exams; added
+end_time and location to the prompt, response schema and event record; IcsBuilder
+writes DTEND and LOCATION.
+Status: HIST 125 rerun through the app; MATH 125 and MATH 114 not rerun yet.
+
+| Course | Explicit dates before | After | Newly correct | Newly wrong |
+|---|---|---|---|---|
+| HIST 125 | 4 of 7 | 7 of 7 | 3 viewing guides | 0 |
+| MATH 125 | not rerun yet | | | |
+| MATH 114 | not rerun yet | | | |
+
+Verified in the generated .ics (HIST 125): the final exam has DTEND (16:15) and
+LOCATION (Exploratory Hall L004) in the same time zone as DTSTART.
+
+Observations:
+- Output is not fully stable across runs. In one run the midterm title was
+  "In-class Midterm", in another "Midterm Exam". Because the UID is derived from the
+  title, its UID changed, so re-importing would create a duplicate calendar entry.
+- Location for the in-lecture events (map quiz, midterm) appeared in one run's raw
+  output but not in the .ics from a later run. [Fill in after checking which it is.]
+- DESCRIPTION is cut at 200 characters, sometimes mid-sentence.
+
+Caveat: the prompt was tuned while looking at HIST 125, so this result is optimistic.
+A held-out syllabus is still needed.
+
 ## What I changed because of this
 
 - [Only if true: timed events now use the term time zone (America/New_York)
@@ -103,24 +130,25 @@ Among the 9 events the model did return across the three syllabi, 0 had a wrong 
 - Decide how to handle "submit 2 of 8" deadlines (export all candidates, or let the user pick).
 - Events held in class are exported as all-day. Decide whether to default to the class
   meeting time when the syllabus states one.
-- Test syllabi that use bare "Week N" dates before deciding whether
-  RelativeDateResolver should own the date calculation.
+- Bare "Week N" dates: searched, not found. `RelativeDateResolver` stays out of the upload path. See below.
 
+## Week N Friday search (Nov 1, 2026)
 
-## What I changed because of this
+Question: does any real syllabus write a deadline as "Week N Friday" (or "Wk N Fri", "Friday of Week N"), with no calendar date next to it? That is the only phrase `resolve()` can turn into a date. If none do, wiring it into `POST /api/syllabus` does not change what users get.
 
-- [Only if true: timed events now use the term time zone (America/New_York)
-  instead of UTC.]
+Text extracted with PDFBox from the local files, then read for week-number schedules.
 
-## Open problems
+| Syllabus | What the schedule actually says | "Week N" + weekday, no date |
+|---|---|---|
+| MATH 114 (F26) | Week rows already include the range, e.g. `6 (9/28-30) … Exam 1` | No |
+| MATH 125 (F26), `Syll.pdf` | `Midterm (MT): Thursday, October 15`; homework "each week on Thursdays" | No |
+| HIST 125 (F26) ver03 | `the Sunday before the Monday recitation`; exams have calendar dates | No |
+| CS 211 (F26) schedule | `Week` column plus `Start Date` (`Aug 25`) and `Due: Sep 8` | No |
+| SOAN 102 (Sp26) | Week number and a month/day on the same row (`3/20 MIDTERM EXAM`) | No |
+| CSC 202 (2025-26) | Same: week number beside `February 4`, `March 10` | No |
+| GEOL 101 (F25) | `Week of 9/1`; `EXAM 1, Wed. 10/1` | No |
+| FYI 100/101 (F25) | Calendar dates on each day. One line says homework is "due in Week 7", with no weekday | No |
 
-- Check whether the extraction prompt is steering the model toward exams only;
-  re-run the three syllabi after changing it and compare recall.
-- Add end time and location fields to the extracted event.
-- Support recurring events (generate from the term range, or use RRULE).
-- Decide whether administrative dates (drop deadlines) are in scope.
-- Decide how to handle "submit 2 of 8" deadlines (export all candidates, or let the user pick).
-- Events held in class are exported as all-day. Decide whether to default to the class
-  meeting time when the syllabus states one.
-- Test syllabi that use bare "Week N" dates before deciding whether
-  RelativeDateResolver should own the date calculation.
+Eight syllabi, zero "Week N Friday" deadlines. The closest line is FYI's "due in Week 7". `resolve()` requires a weekday after the number, so that line would still come back empty.
+
+Decision: do not call `resolve()` from the upload path. The prompt already asks the model to convert "Week 5 Friday". Nothing in this set gives the Java resolver a date to fix.
