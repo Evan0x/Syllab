@@ -55,3 +55,7 @@ node_modules/
 
 # Spring Initializr leftovers
 HELP.md
+eval/syllabus.txt
+eval/*.pdf
+*.ics
+*.pdf
