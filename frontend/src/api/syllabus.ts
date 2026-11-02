@@ -71,6 +71,45 @@ export async function previewSyllabus(input: CreateCalendarInput): Promise<Previ
   return preview
 }
 
+export async function exportCalendar(input: {
+  courseName: string
+  events: CalendarEvent[]
+  signal?: AbortSignal
+}): Promise<CalendarDownload> {
+  let response: Response
+  try {
+    response = await fetch("/api/syllabus/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        courseName: input.courseName,
+        events: input.events.map(toExportEvent),
+      }),
+      signal: input.signal,
+    })
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error
+    }
+    throw new SyllabusApiError("Could not export the calendar", 0)
+  }
+
+  if (!response.ok) {
+    throw new SyllabusApiError(await readErrorMessage(response, "Could not export the calendar"), response.status)
+  }
+
+  const blob = await response.blob()
+  return { blob, filename: calendarFilename(input.courseName) }
+}
+
+export function calendarFilename(courseName: string): string {
+  const safe = courseName
+    .trim()
+    .replace(/[^A-Za-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+  return `${safe || "syllacal"}-calendar.ics`
+}
+
 export async function createCalendar(input: CreateCalendarInput): Promise<CalendarDownload> {
   let response: Response
   try {
@@ -142,7 +181,28 @@ export function filenameFromDisposition(header: string | null): string {
   return "syllabus.ics"
 }
 
-async function readErrorMessage(response: Response): Promise<string> {
+function toExportEvent(event: CalendarEvent) {
+  return {
+    title: event.title,
+    type: emptyToNull(event.type),
+    date: event.date,
+    time: emptyToNull(event.time),
+    endTime: emptyToNull(event.endTime),
+    location: emptyToNull(event.location),
+    weightPercent: event.weightPercent,
+    confidence: emptyToNull(event.confidence),
+  }
+}
+
+function emptyToNull(value: string | null): string | null {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
+}
+
+async function readErrorMessage(
+  response: Response,
+  fallback = "Could not create the calendar",
+): Promise<string> {
   try {
     const data: unknown = await response.json()
     if (isApiError(data)) {
@@ -151,7 +211,7 @@ async function readErrorMessage(response: Response): Promise<string> {
   } catch {
     // The error body was not JSON.
   }
-  return "Could not create the calendar"
+  return fallback
 }
 
 function syllabusForm(input: CreateCalendarInput): FormData {

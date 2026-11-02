@@ -1,6 +1,10 @@
-import { ArrowLeft, TriangleAlert } from "lucide-react"
-import { useState } from "react"
+import { ArrowLeft, Download, LoaderCircle, Plus, TriangleAlert } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { downloadBlob, exportCalendar, isAbortError, SyllabusApiError } from "../api/syllabus.ts"
+import type { CalendarEvent, PreviewResponse } from "../api/syllabus.ts"
 import { Button } from "../components/Button.tsx"
+import { EventEditor } from "../components/EventEditor.tsx"
+import type { EventFields } from "../components/EventEditor.tsx"
 import { SiteFooter } from "../components/SiteFooter.tsx"
 import { SiteHeader } from "../components/SiteHeader.tsx"
 import {
@@ -11,7 +15,6 @@ import {
   formatTimeRange,
   formatWeekday,
 } from "../lib/dates.ts"
-import type { CalendarEvent, PreviewResponse } from "../api/syllabus.ts"
 
 type ReviewTerm = {
   termStart: string
@@ -24,23 +27,90 @@ type ReviewCalendarPageProps = {
   onBack: () => void
 }
 
+type ReviewEvent = CalendarEvent & {
+  id: string
+}
+
 type EventGroup = {
   key: string
   label: string
-  events: CalendarEvent[]
+  events: ReviewEvent[]
 }
 
 const MISSING = "Not specified"
 
 export function ReviewCalendarPage({ preview, term, onBack }: ReviewCalendarPageProps) {
-  const events = preview?.events ?? []
+  const [events, setEvents] = useState<ReviewEvent[]>(() => (preview?.events ?? []).map(withId))
+  const [editor, setEditor] = useState<"add" | string | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [exportError, setExportError] = useState<string>()
+  const [exporting, setExporting] = useState(false)
+  const exportingRef = useRef(false)
   const groups = groupEvents(events)
-  const [activeMonth, setActiveMonth] = useState(groups[0]?.key ?? "")
+  const [chosenMonth, setChosenMonth] = useState(groups[0]?.key ?? "")
+  const activeMonth = groups.some((group) => group.key === chosenMonth)
+    ? chosenMonth
+    : (groups[0]?.key ?? "")
   const semester = term?.termStart && term.termEnd ? formatTermRange(term.termStart, term.termEnd) : null
+  const editing = editor && editor !== "add" ? events.find((event) => event.id === editor) : undefined
+  const pendingDelete = events.find((event) => event.id === pendingDeleteId)
 
   function showMonth(key: string) {
-    setActiveMonth(key)
+    setChosenMonth(key)
     document.getElementById(`review-month-${key}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
+  function saveEvent(fields: EventFields) {
+    if (editor === "add") {
+      setEvents((current) => [
+        ...current,
+        { ...fields, id: crypto.randomUUID(), confidence: null, sourceQuote: null },
+      ])
+    } else if (editing) {
+      setEvents((current) =>
+        current.map((event) =>
+          event.id === editing.id
+            ? { ...event, ...fields, confidence: event.confidence, sourceQuote: event.sourceQuote }
+            : event,
+        ),
+      )
+    }
+    setEditor(null)
+  }
+
+  function confirmDelete() {
+    if (!pendingDeleteId) {
+      return
+    }
+    setEvents((current) => current.filter((event) => event.id !== pendingDeleteId))
+    setPendingDeleteId(null)
+  }
+
+  async function exportIcs() {
+    if (exportingRef.current || !preview) {
+      return
+    }
+    const missing = events.find((event) => !event.title?.trim() || !event.date)
+    if (missing) {
+      setExportError("Every event needs a title and a date before it can be exported.")
+      return
+    }
+    exportingRef.current = true
+    setExporting(true)
+    setExportError(undefined)
+    try {
+      const result = await exportCalendar({ courseName: preview.courseName, events })
+      downloadBlob(result.blob, result.filename)
+    } catch (error) {
+      if (!isAbortError(error)) {
+        setExportError(
+          error instanceof SyllabusApiError ? error.message : "Could not export the calendar",
+        )
+      }
+    } finally {
+      exportingRef.current = false
+      setExporting(false)
+    }
   }
 
   return (
@@ -68,12 +138,6 @@ export function ReviewCalendarPage({ preview, term, onBack }: ReviewCalendarPage
               title="We couldn’t show this calendar"
               message="Go back and upload the syllabus again."
               tone="error"
-              onBack={onBack}
-            />
-          ) : events.length === 0 ? (
-            <StatusCard
-              title="No events found"
-              message="Nothing in this syllabus was returned as an assignment, quiz, or exam."
               onBack={onBack}
             />
           ) : (
@@ -115,27 +179,53 @@ export function ReviewCalendarPage({ preview, term, onBack }: ReviewCalendarPage
                     </ul>
                   </div>
                 ) : null}
-                {groups.map((group) => (
-                  <section
-                    key={group.key}
-                    id={`review-month-${group.key}`}
-                    aria-label={group.label}
-                    className="scroll-mt-6"
-                  >
-                    <h2 className="border-b border-hairline px-5 py-3 text-[13px] font-medium tracking-[-0.1px] text-ink lg:px-8">
-                      {group.label}
-                    </h2>
-                    <ol>
-                      {group.events.map((event, index) => (
-                        <EventRow
-                          key={`${group.key}-${event.title ?? "event"}-${event.date ?? "date"}-${index}`}
-                          event={event}
-                        />
-                      ))}
-                    </ol>
-                  </section>
-                ))}
+                {events.length === 0 ? (
+                  <p className="p-6 text-[13px] leading-[1.6] text-muted lg:p-8">
+                    No events yet. Add an event, or export a calendar with none.
+                  </p>
+                ) : (
+                  groups.map((group) => (
+                    <section
+                      key={group.key}
+                      id={`review-month-${group.key}`}
+                      aria-label={group.label}
+                      className="scroll-mt-6"
+                    >
+                      <h2 className="border-b border-hairline px-5 py-3 text-[13px] font-medium tracking-[-0.1px] text-ink lg:px-8">
+                        {group.label}
+                      </h2>
+                      <ol>
+                        {group.events.map((event) => (
+                          <EventRow
+                            key={event.id}
+                            event={event}
+                            onEdit={() => setEditor(event.id)}
+                            onDelete={() => setPendingDeleteId(event.id)}
+                          />
+                        ))}
+                      </ol>
+                    </section>
+                  ))
+                )}
               </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Button icon={Plus} onClick={() => setEditor("add")}>
+                  Add event
+                </Button>
+                <Button
+                  icon={exporting ? LoaderCircle : Download}
+                  disabled={exporting}
+                  spinIcon={exporting}
+                  onClick={() => void exportIcs()}
+                >
+                  {exporting ? "Exporting calendar…" : "Export calendar"}
+                </Button>
+              </div>
+              {exportError ? (
+                <p role="alert" className="text-[12px] leading-[1.45] text-error">
+                  {exportError}
+                </p>
+              ) : null}
             </>
           )}
 
@@ -148,6 +238,29 @@ export function ReviewCalendarPage({ preview, term, onBack }: ReviewCalendarPage
           </button>
         </div>
       </main>
+      {editor === "add" ? (
+        <EventEditor
+          heading="Add event"
+          initial={emptyFields()}
+          onCancel={() => setEditor(null)}
+          onSave={saveEvent}
+        />
+      ) : null}
+      {editing ? (
+        <EventEditor
+          heading="Edit event"
+          initial={fieldsFromEvent(editing)}
+          onCancel={() => setEditor(null)}
+          onSave={saveEvent}
+        />
+      ) : null}
+      {pendingDelete ? (
+        <ConfirmDelete
+          title={pendingDelete.title?.trim() || "Untitled event"}
+          onCancel={() => setPendingDeleteId(null)}
+          onConfirm={confirmDelete}
+        />
+      ) : null}
       <SiteFooter />
     </div>
   )
@@ -198,13 +311,25 @@ function StatusCard({
   )
 }
 
-function EventRow({ event }: { event: CalendarEvent }) {
+function EventRow({
+  event,
+  onEdit,
+  onDelete,
+}: {
+  event: ReviewEvent
+  onEdit: () => void
+  onDelete: () => void
+}) {
   const dated = event.date ? formatMonthDay(event.date) : null
   const time = formatTimeRange(event.time, event.endTime)
   const quote = event.sourceQuote
 
   return (
-    <li className="flex flex-col gap-3 border-b border-hairline px-5 py-4 last:border-b-0 sm:flex-row sm:items-start sm:gap-6 lg:px-8 lg:py-5">
+    <li
+      className={`flex flex-col gap-3 border-b border-hairline px-5 py-4 last:border-b-0 sm:flex-row sm:items-start sm:gap-6 lg:px-8 lg:py-5 ${
+        event.confidence?.trim().toUpperCase() === "LOW" ? "bg-error-soft" : ""
+      }`}
+    >
       <div className="flex w-14 shrink-0 flex-col">
         {dated && event.date ? (
           <>
@@ -245,9 +370,112 @@ function EventRow({ event }: { event: CalendarEvent }) {
             {quote}
           </blockquote>
         ) : null}
+        <div className="mt-3 flex gap-4">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="text-[12px] text-error focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </li>
   )
+}
+
+function ConfirmDelete({
+  title,
+  onCancel,
+  onConfirm,
+}: {
+  title: string
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const titleId = "delete-event-title"
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) {
+      return
+    }
+    dialog.showModal()
+    return () => dialog.close()
+  }, [])
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="review-dialog w-full max-w-[420px]"
+      aria-labelledby={titleId}
+      onCancel={(event) => {
+        event.preventDefault()
+        onCancel()
+      }}
+    >
+      <div className="flex flex-col gap-4 rounded-2xl border border-hairline bg-surface p-5 shadow-[0_8px_32px_rgba(39,35,62,0.08)] sm:p-6">
+        <h2 id={titleId} className="text-[18px] tracking-[-0.3px] text-ink">
+          Delete this event?
+        </h2>
+        <p className="text-[13px] leading-[1.6] text-muted">
+          {title} will be left out of the exported calendar.
+        </p>
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-12 rounded-lg px-4 text-[14px] text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="h-12 rounded-lg bg-error px-5 text-[14px] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+          >
+            Delete event
+          </button>
+        </div>
+      </div>
+    </dialog>
+  )
+}
+
+function emptyFields(): EventFields {
+  return {
+    title: "",
+    type: null,
+    date: "",
+    time: null,
+    endTime: null,
+    location: null,
+    weightPercent: null,
+  }
+}
+
+function fieldsFromEvent(event: ReviewEvent): EventFields {
+  return {
+    title: event.title ?? "",
+    type: event.type,
+    date: event.date ?? "",
+    time: event.time,
+    endTime: event.endTime,
+    location: event.location,
+    weightPercent: event.weightPercent,
+  }
+}
+
+function withId(event: CalendarEvent): ReviewEvent {
+  return { ...event, id: crypto.randomUUID() }
 }
 
 function Detail({ label, value }: { label: string; value: string | null }) {
@@ -262,7 +490,7 @@ function Detail({ label, value }: { label: string; value: string | null }) {
   )
 }
 
-function groupEvents(events: CalendarEvent[]): EventGroup[] {
+function groupEvents(events: ReviewEvent[]): EventGroup[] {
   const sorted = [...events].sort((left, right) => eventKey(left).localeCompare(eventKey(right)))
   const groups: EventGroup[] = []
   for (const event of sorted) {
