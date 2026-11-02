@@ -1,14 +1,32 @@
 import { ArrowUpRight, CalendarCheck2 } from "lucide-react"
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  onHome?: () => void
+}
+
+export function SiteHeader({ onHome }: SiteHeaderProps) {
+  const logoClass =
+    "flex items-center gap-[9px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+  const logo = (
+    <>
+      <span className="flex size-[29px] items-center justify-center rounded-[7px] bg-indigo text-white">
+        <CalendarCheck2 size={18} strokeWidth={1.75} aria-hidden />
+      </span>
+      <span className="text-[20px] tracking-[-0.7px] text-ink">SyllaCal</span>
+    </>
+  )
+
   return (
     <header className="flex h-[76px] items-center justify-between border-b border-hairline px-6 lg:h-[88px] lg:px-10 xl:px-20">
-      <a href="#top" className="flex items-center gap-[9px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo">
-        <span className="flex size-[29px] items-center justify-center rounded-[7px] bg-indigo text-white">
-          <CalendarCheck2 size={18} strokeWidth={1.75} aria-hidden />
-        </span>
-        <span className="text-[20px] tracking-[-0.7px] text-ink">SyllaCal</span>
-      </a>
+      {onHome ? (
+        <button type="button" onClick={onHome} className={`${logoClass} cursor-pointer border-0 bg-transparent p-0 text-left`}>
+          {logo}
+        </button>
+      ) : (
+        <a href="#top" className={logoClass}>
+          {logo}
+        </a>
+      )}
       <nav aria-label="Page" className="flex items-center gap-8 text-[13px] text-muted">
         <a href="#how-it-works" className="hidden rounded-sm hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:inline">
           How it works

@@ -44,7 +44,17 @@ export GEMINI_API_KEY=your-key
 ./mvnw spring-boot:run
 ```
 
-Open http://localhost:8080. The key is read from the environment. It is not stored in the repo.
+Open http://localhost:8080 for the original single-page form. The key is read from the environment. It is not stored in the repo.
+
+The React landing page lives in `frontend/`. In another terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173. The dev server proxies `/api` to http://localhost:8080.
 
 ## Known limitations
 

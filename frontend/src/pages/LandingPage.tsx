@@ -1,13 +1,7 @@
 import { ArrowRight, CalendarDays, LockKeyhole } from "lucide-react"
 import { useRef, useState } from "react"
 import type { FormEvent } from "react"
-import {
-  createCalendar,
-  downloadBlob,
-  isAbortError,
-  SyllabusApiError,
-  type CalendarDownload,
-} from "../api/syllabus.ts"
+import { isAbortError, previewSyllabus, SyllabusApiError, type PreviewResponse } from "../api/syllabus.ts"
 import { Button } from "../components/Button.tsx"
 import { ConversionStatus } from "../components/ConversionStatus.tsx"
 import { DateField } from "../components/DateField.tsx"
@@ -19,14 +13,18 @@ import { TextField } from "../components/TextField.tsx"
 import { formatLongDate, formatTermRange } from "../lib/dates.ts"
 import { inspectSyllabusFile, type FileProblem } from "../lib/files.ts"
 
-type Phase = "form" | "loading" | "success" | "error"
+type Phase = "form" | "loading" | "error"
+
+type LandingPageProps = {
+  onPreview: (preview: PreviewResponse, term: { termStart: string; termEnd: string }) => void
+}
 
 const MISSING_FILE = "No file selected. Upload a syllabus PDF before generating your calendar."
 const MISSING_COURSE = "Enter a course name to label your events."
 const MISSING_START = "Enter the first day of your semester."
 const MISSING_END = "Enter the last day of your semester."
 
-export function LandingPage() {
+export function LandingPage({ onPreview }: LandingPageProps) {
   const [file, setFile] = useState<File | null>(null)
   const [problem, setProblem] = useState<FileProblem | null>(null)
   const [missingFile, setMissingFile] = useState<string>()
@@ -38,7 +36,6 @@ export function LandingPage() {
   const [endError, setEndError] = useState<string>()
   const [phase, setPhase] = useState<Phase>("form")
   const [apiMessage, setApiMessage] = useState("")
-  const [download, setDownload] = useState<CalendarDownload | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const submitting = useRef(false)
 
@@ -97,23 +94,22 @@ export function LandingPage() {
     submitting.current = true
     setPhase("loading")
     try {
-      const result = await createCalendar({
+      const result = await previewSyllabus({
         file,
         courseName: course,
         termStart,
         termEnd,
         signal: controller.signal,
       })
-      setDownload(result)
-      downloadBlob(result.blob, result.filename)
-      setPhase("success")
+      setPhase("form")
+      onPreview(result, { termStart, termEnd })
     } catch (error) {
       if (isAbortError(error)) {
         setPhase("form")
         return
       }
       setApiMessage(
-        error instanceof SyllabusApiError ? error.message : "Could not create the calendar",
+        error instanceof SyllabusApiError ? error.message : "Could not read this syllabus",
       )
       setPhase("error")
     } finally {
@@ -131,18 +127,7 @@ export function LandingPage() {
     setFile(null)
     setProblem(null)
     setMissingFile(undefined)
-    setDownload(null)
     setApiMessage("")
-  }
-
-  function reset() {
-    replaceFile()
-    setCourseName("")
-    setTermStart("")
-    setTermEnd("")
-    setCourseError(undefined)
-    setStartError(undefined)
-    setEndError(undefined)
   }
 
   return (
@@ -266,15 +251,6 @@ export function LandingPage() {
                 courseName={courseName.trim()}
                 termLabel={termLabel}
                 onCancel={cancel}
-              />
-            ) : phase === "success" && download ? (
-              <ConversionStatus
-                phase="success"
-                courseName={courseName.trim()}
-                termLabel={termLabel}
-                filename={download.filename}
-                onDownload={() => downloadBlob(download.blob, download.filename)}
-                onReset={reset}
               />
             ) : (
               <ConversionStatus

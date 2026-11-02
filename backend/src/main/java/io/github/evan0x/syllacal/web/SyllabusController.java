@@ -46,6 +46,16 @@ public class SyllabusController {
 		this.icsBuilder = icsBuilder;
 	}
 
+	/**
+	 * Creates a calendar from a PDF file.
+	 * @param file The PDF file to create a calendar from.
+	 * @param courseName The name of the course.
+	 * @param termStart The start date of the term.
+	 * @param termEnd The end date of the term.
+	 * @return The calendar in ICS format.
+	 * @throws ScannedPdfException If the PDF file is not a valid PDF.
+	 * @throws IOException If there is an error reading the PDF file.
+	 */
 	@PostMapping("/api/syllabus")
 	public ResponseEntity<String> createCalendar(
 			@RequestParam("file") MultipartFile file,
@@ -77,6 +87,54 @@ public class SyllabusController {
 				.header("Content-Disposition", disposition.toString())
 				.body(ics);
 	}
+
+
+	/**
+	 * Previews the calendar for a given course.
+	 * @param file The PDF file to preview.
+	 * @param courseName The name of the course.
+	 * @param termStart The start date of the term.
+	 * @param termEnd The end date of the term.
+	 * @return The extracted events and validation warnings.
+	 * @throws ScannedPdfException If the PDF file is not a valid PDF.
+	 * @throws IOException If there is an error reading the PDF file.
+	 */
+	@PostMapping("/api/syllabus/preview")
+	public ResponseEntity<PreviewResponse> preview(
+			@RequestParam("file") MultipartFile file,
+			@RequestParam("courseName") String courseName,
+			@RequestParam("termStart") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate termStart,
+			@RequestParam("termEnd") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate termEnd)
+			throws ScannedPdfException, IOException {
+		String course = requireCourseName(courseName);
+		requireTerm(termStart, termEnd);
+		byte[] pdf = requirePdf(file);
+
+		String syllabusText;
+		try {
+			syllabusText = pdfTextExtractor.extract(new ByteArrayInputStream(pdf));
+		}
+		catch (IOException exception) {
+			throw new SyllabusRequestException(HttpStatus.BAD_REQUEST, pdfReadMessage(exception));
+		}
+
+		List<ExtractedEvent> extracted = eventExtractor.extract(syllabusText, termStart, termEnd);
+		ValidationResult validated = eventValidator.validate(extracted, termStart, termEnd);
+		List<CalendarEvent> events = validated.validEvents().stream()
+				.map(event -> new CalendarEvent(
+						event.title(),
+						event.type(),
+						event.date(),
+						event.time(),
+						event.endTime(),
+						event.location(),
+						event.weightPercent(),
+						event.confidence()))
+				.toList();
+
+		return ResponseEntity.ok(new PreviewResponse(course, events, validated.warnings()));
+	}
+
 
 	private static String requireCourseName(String courseName) {
 		if (courseName == null || courseName.isBlank()) {
@@ -132,4 +190,7 @@ public class SyllabusController {
 		}
 		return safe + ".ics";
 	}
+
+	
+
 }
