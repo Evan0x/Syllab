@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --color-canvas: #faf9f6;
+  --color-surface: #ffffff;
+  --color-ink: #25262b;
+  --color-muted: #676971;
+  --color-placeholder: #74747d;
+  --color-hairline: #e3e2e7;
+  --color-indigo: #5452c8;
+  --color-indigo-deep: #4846b3;
+  --color-indigo-soft: #f2f1fc;
+  --color-indigo-line: #a6a2ea;
+  --color-well: #f3f2ef;
+  --color-drop: #fcfcfb;
+  --color-error: #b4433e;
+  --color-error-soft: #fcf3f1;
+  --color-success: #2f7a56;
+  --color-success-soft: #f0f7f3;
+  --color-disabled: #e9e8ef;
+  --color-disabled-ink: #8b8998;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+.date-input {
+  position: relative;
+  color-scheme: light;
+}
+
+.date-input::-webkit-datetime-edit,
+.date-input::-webkit-datetime-edit-text,
+.date-input::-webkit-datetime-edit-month-field,
+.date-input::-webkit-datetime-edit-day-field,
+.date-input::-webkit-datetime-edit-year-field {
+  color: inherit;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.date-input::-webkit-datetime-edit {
+  font-size: 12px;
+  padding-right: 0.25rem;
+}
+
+@keyframes syllacal-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.progress-indeterminate {
+  width: 38%;
+  animation: syllacal-progress 1.4s ease-in-out infinite;
+}
