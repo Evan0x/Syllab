@@ -4,6 +4,7 @@ import io.github.evan0x.syllacal.extraction.ExtractionException;
 import io.github.evan0x.syllacal.pdf.ScannedPdfException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -35,6 +36,12 @@ public class ApiExceptionHandler {
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
 	public ResponseEntity<ApiError> handleTooLarge(MaxUploadSizeExceededException exception) {
 		return ResponseEntity.badRequest().body(new ApiError("File exceeds the 10 MB limit"));
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ApiError> handleUnreadable(HttpMessageNotReadableException exception) {
+		return ResponseEntity.badRequest()
+				.body(new ApiError("A date must be YYYY-MM-DD and a time must be HH:mm or HH:mm:ss"));
 	}
 
 	@ExceptionHandler({

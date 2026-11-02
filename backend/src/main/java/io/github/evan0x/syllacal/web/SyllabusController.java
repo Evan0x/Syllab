@@ -9,10 +9,12 @@ import io.github.evan0x.syllacal.pdf.PdfTextExtractor;
 import io.github.evan0x.syllacal.pdf.ScannedPdfException;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -133,6 +136,56 @@ public class SyllabusController {
 				.toList();
 
 		return ResponseEntity.ok(new PreviewResponse(course, events, validated.warnings()));
+	}
+
+	@PostMapping("/api/syllabus/export")
+	public ResponseEntity<String> export(@RequestBody ExportRequest request) {
+		String course = requireCourseName(request.courseName());
+		List<CalendarEvent> submitted = request.events();
+		if (submitted == null) {
+			throw new SyllabusRequestException(HttpStatus.BAD_REQUEST, "events is required");
+		}
+
+		List<ExtractedEvent> events = new ArrayList<>();
+		for (int index = 0; index < submitted.size(); index++) {
+			events.add(toExtractedEvent(submitted.get(index), index));
+		}
+		String ics = icsBuilder.build(events, course);
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/calendar;charset=UTF-8"))
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"syllacal.ics\"")
+				.body(ics);
+	}
+
+	private static ExtractedEvent toExtractedEvent(CalendarEvent event, int index) {
+		if (event == null) {
+			throw new SyllabusRequestException(HttpStatus.BAD_REQUEST, "events[" + index + "] is required");
+		}
+		if (event.title() == null || event.title().isBlank()) {
+			throw new SyllabusRequestException(HttpStatus.BAD_REQUEST, "events[" + index + "].title is required");
+		}
+		if (event.date() == null) {
+			throw new SyllabusRequestException(HttpStatus.BAD_REQUEST, "events[" + index + "].date is required");
+		}
+		if (event.time() == null && event.endTime() != null) {
+			throw new SyllabusRequestException(
+					HttpStatus.BAD_REQUEST, "events[" + index + "].endTime requires a start time");
+		}
+		if (event.time() != null && event.endTime() != null && !event.endTime().isAfter(event.time())) {
+			throw new SyllabusRequestException(
+					HttpStatus.BAD_REQUEST, "events[" + index + "].endTime must be after time");
+		}
+		String location = event.location() == null || event.location().isBlank() ? null : event.location().trim();
+		return new ExtractedEvent(
+				event.title().trim(),
+				event.type(),
+				event.date(),
+				event.time(),
+				event.endTime(),
+				location,
+				event.weightPercent(),
+				event.confidence(),
+				null);
 	}
 
 
