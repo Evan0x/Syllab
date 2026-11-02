@@ -72,7 +72,6 @@ public class GeminiEventExtractor implements EventExtractor {
 		Map<String, Object> requestBody = buildRequest(systemInstruction, syllabusText);
 		String responseBody = callWithRetry(requestBody);
 		String modelJson = extractModelText(responseBody);
-		System.out.println(modelJson);
 		return parseEventsJson(modelJson);
 	}
 
