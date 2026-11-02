@@ -129,3 +129,16 @@ Same `Syll.pdf`, through the Docker image after the prompt change. The model ret
 | Weekly quiz and homework | still missed |
 
 Weight empty is correct: the syllabus says the grade uses "the largest of the following" and gives two schemes. The syllabus writes both exams as `10:30 – 11:30 pm`. The returned source quote says `am`, and the stored time is `10:30`, not `22:30`.
+
+## Image size (Nov 1, 2026)
+
+Same build. `docker images` reports uncompressed size. ECR `imageSizeInBytes` is the compressed size of what was pushed.
+
+| Image | What it keeps | Uncompressed | Compressed in ECR |
+|---|---|---|---|
+| `syllacal:single` | JDK 21, Maven cache, source, and the jar | 1.02GB | not pushed |
+| `syllacal:dev` | JRE 21 and the jar | 531MB | 139,251,471 bytes (133 MiB) |
+
+The 133 MiB object is the application image (`sha256:d6d82805…`, the same digest as the local multi-stage image). The other ECR object is 1,698 bytes and is an attestation manifest, not the app.
+
+Multi-stage build, uncompressed, on this machine: 1.02GB to 531MB. The number to cite for the registry copy is 133 MiB compressed. There is no compressed size for the single-stage image, so do not say ECR went from 1.02GB to 133 MiB.
