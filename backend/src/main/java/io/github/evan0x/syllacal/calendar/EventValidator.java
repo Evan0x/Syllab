@@ -1,6 +1,7 @@
 package io.github.evan0x.syllacal.calendar;
 
 import io.github.evan0x.syllacal.extraction.ExtractedEvent;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@Component
 public class EventValidator {
 
 	public ValidationResult validate(List<ExtractedEvent> events, LocalDate termStart, LocalDate termEnd) {

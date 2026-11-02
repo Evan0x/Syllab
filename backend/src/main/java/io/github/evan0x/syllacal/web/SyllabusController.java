@@ -32,12 +32,18 @@ public class SyllabusController {
 
 	private final PdfTextExtractor pdfTextExtractor;
 	private final EventExtractor eventExtractor;
-	private final EventValidator eventValidator = new EventValidator();
-	private final IcsBuilder icsBuilder = new IcsBuilder();
+	private final EventValidator eventValidator;
+	private final IcsBuilder icsBuilder;
 
-	public SyllabusController(PdfTextExtractor pdfTextExtractor, EventExtractor eventExtractor) {
+	public SyllabusController(
+			PdfTextExtractor pdfTextExtractor,
+			EventExtractor eventExtractor,
+			EventValidator eventValidator,
+			IcsBuilder icsBuilder) {
 		this.pdfTextExtractor = pdfTextExtractor;
 		this.eventExtractor = eventExtractor;
+		this.eventValidator = eventValidator;
+		this.icsBuilder = icsBuilder;
 	}
 
 	@PostMapping("/api/syllabus")

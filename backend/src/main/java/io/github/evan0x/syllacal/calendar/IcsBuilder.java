@@ -9,6 +9,7 @@ import net.fortuna.ical4j.model.property.ProdId;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.immutable.ImmutableCalScale;
 import net.fortuna.ical4j.model.property.immutable.ImmutableVersion;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -30,6 +31,7 @@ import java.util.UUID;
  * <a href="https://github.com/ical4j/ical4j">ical4j README</a> and
  * <a href="https://www.ical4j.org/examples/model/">model examples</a>.
  */
+@Component
 public class IcsBuilder {
 
 	public String build(List<ExtractedEvent> events, String courseName) {

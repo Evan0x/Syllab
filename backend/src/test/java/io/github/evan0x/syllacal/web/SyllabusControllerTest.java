@@ -1,5 +1,7 @@
 package io.github.evan0x.syllacal.web;
 
+import io.github.evan0x.syllacal.calendar.EventValidator;
+import io.github.evan0x.syllacal.calendar.IcsBuilder;
 import io.github.evan0x.syllacal.extraction.EventExtractor;
 import io.github.evan0x.syllacal.extraction.ExtractedEvent;
 import io.github.evan0x.syllacal.extraction.ExtractionException;
@@ -32,7 +34,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(SyllabusController.class)
-@Import({PdfTextExtractor.class, SyllabusControllerTest.FakeExtractor.class})
+@Import({
+		PdfTextExtractor.class,
+		EventValidator.class,
+		IcsBuilder.class,
+		SyllabusControllerTest.FakeExtractor.class
+})
 class SyllabusControllerTest {
 
 	@Autowired
