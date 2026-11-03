@@ -4,6 +4,10 @@ Early-stage demo, under active development.
 
 SyllaCal takes a course syllabus PDF, lets you review the extracted dates, and downloads an `.ics` calendar of assignments, quizzes, and exams.
 
+## Demo
+
+[syllacal.mov](docs/syllacal.mov)
+
 ## Features
 
 - Upload a PDF, a course name, and a term start and end date.
