@@ -6,7 +6,11 @@ SyllaCal takes a course syllabus PDF, lets you review the extracted dates, and d
 
 ## Demo
 
-[syllacal.mov](docs/syllacal.mov)
+[syllacal.mov](
+
+https://github.com/user-attachments/assets/5e1b23e3-cfa0-4106-89bb-6b0eef898571
+
+)
 
 ## Features
 
