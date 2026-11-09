@@ -37,8 +37,9 @@ public class SecurityConfig {
 							response.getWriter().write("{\"message\":\"Forbidden\"}");
 						}))
 				.authorizeHttpRequests(auth -> auth
+						.requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.svg", "/favicon.ico", "/assets/**")
+						.permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
-						.requestMatchers("/api/syllabus", "/api/syllabus/**").permitAll()
 						.anyRequest().authenticated());
 		return http.build();
 	}

@@ -54,6 +54,22 @@ class AuthAccessTest {
 	}
 
 	@Test
+	void loginPageLoadsWithoutAuthenticationAndSetsTheCsrfCookie() throws Exception {
+		for (String path : new String[] { "/", "/index.html", "/favicon.svg", "/assets/app.js" }) {
+			MvcResult result = mockMvc.perform(get(path)).andReturn();
+			assertThat(result.getResponse().getStatus()).isNotEqualTo(401);
+			Cookie csrf = result.getResponse().getCookie("XSRF-TOKEN");
+			assertThat(csrf).isNotNull();
+			assertThat(csrf.isHttpOnly()).isFalse();
+		}
+	}
+
+	@Test
+	void syllabusRequiresAuthentication() throws Exception {
+		send(post("/api/syllabus"), null, null, ip()).andExpect(status().isUnauthorized());
+	}
+
+	@Test
 	void unauthenticatedCallsAreRejected() throws Exception {
 		mockMvc.perform(get("/api/me")).andExpect(status().isUnauthorized());
 		mockMvc.perform(get("/api/events/" + UUID.randomUUID())).andExpect(status().isUnauthorized());
