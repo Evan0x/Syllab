@@ -1,3 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:1/unused
+    username: unused
+    password: unused
+
 gemini:
   model: gemini-3.5-flash-lite
   api-key: test-key-not-real
