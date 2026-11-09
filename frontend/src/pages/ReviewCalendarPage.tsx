@@ -323,6 +323,7 @@ function EventRow({
   const dated = event.date ? formatMonthDay(event.date) : null
   const time = formatTimeRange(event.time, event.endTime)
   const quote = event.sourceQuote
+  const showQuote = quote != null && quote.trim() !== ""
 
   return (
     <li
@@ -365,10 +366,11 @@ function EventRow({
           <Detail label="Location" value={event.location?.trim() || null} />
           <Detail label="Weight" value={formatWeight(event.weightPercent)} />
         </dl>
-        {quote ? (
-          <blockquote className="mt-3 border-l-2 border-indigo-line pl-3 text-[12px] leading-[1.55] text-muted italic">
-            {quote}
-          </blockquote>
+        {showQuote ? (
+          <details className="mt-3">
+            <summary className="cursor-pointer text-[12px] text-muted">Source quote</summary>
+            <p className="mt-2 border-l-2 border-indigo-line pl-3 text-[12px] leading-[1.55] text-muted">{quote}</p>
+          </details>
         ) : null}
         <div className="mt-3 flex gap-4">
           <button

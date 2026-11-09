@@ -11,6 +11,7 @@ public record CalendarEvent(
 		LocalTime endTime,
 		String location,
 		Double weightPercent,
-		String confidence
+		String confidence,
+		String sourceQuote
 ) {
 }

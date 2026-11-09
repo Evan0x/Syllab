@@ -191,6 +191,7 @@ function toExportEvent(event: CalendarEvent) {
     location: emptyToNull(event.location),
     weightPercent: event.weightPercent,
     confidence: emptyToNull(event.confidence),
+    sourceQuote: event.sourceQuote,
   }
 }
 

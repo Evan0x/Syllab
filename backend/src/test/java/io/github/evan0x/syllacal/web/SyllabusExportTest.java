@@ -9,7 +9,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
+import java.nio.charset.StandardCharsets;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -228,6 +232,137 @@ class SyllabusExportTest {
 	}
 
 	@Test
+	void exportWithSourceQuoteAddsOneSourceLine() throws Exception {
+		String ics = exportIcs("""
+				{
+				  "courseName": "HIST 125",
+				  "events": [
+				    {
+				      "title": "Map Quiz",
+				      "date": "2026-09-09",
+				      "weightPercent": 5,
+				      "sourceQuote": "Map Quiz is on September 9"
+				    }
+				  ]
+				}
+				""");
+		String unfolded = unfold(ics);
+		assertThat(occurrences(unfolded, "Source:")).isEqualTo(1);
+		assertThat(unfolded).contains("DESCRIPTION:Weight: 5%\\nSource: Map Quiz is on September 9");
+	}
+
+	@Test
+	void exportWithoutSourceQuoteHasNoSourceLine() throws Exception {
+		String ics = exportIcs(body("Map Quiz", "2026-09-09", null, null, null));
+		assertThat(unfold(ics)).doesNotContain("Source:");
+
+		String explicitNull = exportIcs("""
+				{
+				  "courseName": "HIST 125",
+				  "events": [
+				    {
+				      "title": "Map Quiz",
+				      "date": "2026-09-09",
+				      "sourceQuote": null
+				    }
+				  ]
+				}
+				""");
+		assertThat(unfold(explicitNull)).doesNotContain("Source:");
+	}
+
+	@Test
+	void exportWithBlankSourceQuoteHasNoSourceLine() throws Exception {
+		String ics = exportIcs("""
+				{
+				  "courseName": "HIST 125",
+				  "events": [
+				    {
+				      "title": "Map Quiz",
+				      "date": "2026-09-09",
+				      "sourceQuote": " \\n\\t "
+				    }
+				  ]
+				}
+				""");
+		assertThat(unfold(ics)).doesNotContain("Source:");
+	}
+
+	@Test
+	void sourceQuoteCannotInjectExtraEvents() throws Exception {
+		String quote = "notes\nEND:VEVENT\nBEGIN:VEVENT\nSUMMARY:Injected";
+		String ics = exportIcs("""
+				{
+				  "courseName": "HIST 125",
+				  "events": [
+				    {
+				      "title": "Map Quiz",
+				      "date": "2026-09-09",
+				      "sourceQuote": %s
+				    }
+				  ]
+				}
+				""".formatted(jsonString(quote)));
+		String unfolded = unfold(ics);
+		assertThat(unfolded.lines().filter(line -> line.startsWith("BEGIN:VEVENT")).count()).isEqualTo(1);
+		assertThat(unfolded.lines().filter(line -> line.startsWith("END:VEVENT")).count()).isEqualTo(1);
+		assertThat(unfolded.lines().filter(line -> line.startsWith("SUMMARY:")).toList())
+				.containsExactly("SUMMARY:Map Quiz");
+		assertThat(occurrences(unfolded, "Source:")).isEqualTo(1);
+	}
+
+	@Test
+	void exportAcceptsTwoHundredEventsAndRejectsTwoHundredOne() throws Exception {
+		mockMvc.perform(post("/api/syllabus/export")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(eventsJson(200, "Q")))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("BEGIN:VCALENDAR")));
+
+		mockMvc.perform(post("/api/syllabus/export")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(eventsJson(201, "Q")))
+				.andExpect(status().isBadRequest())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(jsonPath("$.message").value("events must contain at most 200 events"));
+	}
+
+	@Test
+	void exportAcceptsFiveHundredCharacterQuoteAndRejectsFiveHundredOne() throws Exception {
+		String accepted = exportIcs("""
+				{
+				  "courseName": "HIST 125",
+				  "events": [
+				    {
+				      "title": "Map Quiz",
+				      "date": "2026-09-09",
+				      "sourceQuote": "%s"
+				    }
+				  ]
+				}
+				""".formatted("a".repeat(500)));
+		assertThat(occurrences(unfold(accepted), "Source:")).isEqualTo(1);
+
+		mockMvc.perform(post("/api/syllabus/export")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "courseName": "HIST 125",
+								  "events": [
+								    {
+								      "title": "Map Quiz",
+								      "date": "2026-09-09",
+								      "sourceQuote": "%s"
+								    }
+								  ]
+								}
+								""".formatted("a".repeat(501))))
+				.andExpect(status().isBadRequest())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(jsonPath("$.message").value("events[0].sourceQuote must be at most 500 characters"));
+	}
+
+	@Test
 	void emptyEventListReturnsACalendarWithNoEvents() throws Exception {
 		mockMvc.perform(post("/api/syllabus/export")
 						.contentType(MediaType.APPLICATION_JSON)
@@ -262,5 +397,57 @@ class SyllabusExportTest {
 
 	private static String jsonValue(String value) {
 		return value == null ? "null" : "\"" + value + "\"";
+	}
+
+	private String exportIcs(String json) throws Exception {
+		MvcResult result = mockMvc.perform(post("/api/syllabus/export")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(json))
+				.andExpect(status().isOk())
+				.andReturn();
+		return result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+	}
+
+	private static String eventsJson(int count, String titlePrefix) {
+		StringBuilder json = new StringBuilder();
+		json.append("{\"courseName\":\"HIST 125\",\"events\":[");
+		for (int index = 0; index < count; index++) {
+			if (index > 0) {
+				json.append(',');
+			}
+			json.append("{\"title\":\"")
+					.append(titlePrefix)
+					.append(index)
+					.append("\",\"date\":\"2026-09-09\"}");
+		}
+		json.append("]}");
+		return json.toString();
+	}
+
+	private static String jsonString(String value) {
+		return "\"" + value
+				.replace("\\", "\\\\")
+				.replace("\"", "\\\"")
+				.replace("\r", "\\r")
+				.replace("\n", "\\n")
+				.replace("\t", "\\t") + "\"";
+	}
+
+	private static String unfold(String ics) {
+		return ics.replace("\r\n", "\n").replaceAll("\n[ \\t]", "");
+	}
+
+	private static int occurrences(String text, String needle) {
+		int count = 0;
+		int from = 0;
+		while (from < text.length()) {
+			int found = text.indexOf(needle, from);
+			if (found < 0) {
+				return count;
+			}
+			count++;
+			from = found + needle.length();
+		}
+		return count;
 	}
 }

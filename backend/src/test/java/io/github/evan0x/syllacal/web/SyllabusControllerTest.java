@@ -108,6 +108,21 @@ class SyllabusControllerTest {
 	}
 
 	@Test
+	void previewIncludesTheSourceQuote() throws Exception {
+		MockMultipartFile file = new MockMultipartFile(
+				"file", "syllabus.pdf", "application/pdf", pdf("a".repeat(220)));
+
+		mockMvc.perform(multipart("/api/syllabus/preview")
+						.file(file)
+						.param("courseName", "MATH 101")
+						.param("termStart", "2026-08-24")
+						.param("termEnd", "2026-12-16"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.events[0].title").value("Exam 1"))
+				.andExpect(jsonPath("$.events[0].sourceQuote").value("Exam 1"));
+	}
+
+	@Test
 	void rejectsExtractionFailure() throws Exception {
 		MockMultipartFile file = new MockMultipartFile(
 				"file", "syllabus.pdf", "application/pdf", pdf("FAIL_EXTRACTION " + "b".repeat(200)));

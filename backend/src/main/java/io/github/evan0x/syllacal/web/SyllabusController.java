@@ -31,6 +31,16 @@ public class SyllabusController {
 
 	static final long MAX_FILE_BYTES = 10L * 1024 * 1024;
 
+	static final int MAX_EXPORT_EVENTS = 200;
+
+	static final int MAX_COURSE_NAME_CHARS = 200;
+
+	static final int MAX_TITLE_CHARS = 300;
+
+	static final int MAX_LOCATION_CHARS = 200;
+
+	static final int MAX_SOURCE_QUOTE_CHARS = 500;
+
 	private static final byte[] PDF_MAGIC = "%PDF-".getBytes(StandardCharsets.US_ASCII);
 
 	private final PdfTextExtractor pdfTextExtractor;
@@ -132,7 +142,8 @@ public class SyllabusController {
 						event.endTime(),
 						event.location(),
 						event.weightPercent(),
-						event.confidence()))
+						event.confidence(),
+						event.sourceText()))
 				.toList();
 
 		return ResponseEntity.ok(new PreviewResponse(course, events, validated.warnings()));
@@ -141,9 +152,17 @@ public class SyllabusController {
 	@PostMapping("/api/syllabus/export")
 	public ResponseEntity<String> export(@RequestBody ExportRequest request) {
 		String course = requireCourseName(request.courseName());
+		if (course.length() > MAX_COURSE_NAME_CHARS) {
+			throw new SyllabusRequestException(
+					HttpStatus.BAD_REQUEST, "courseName must be at most 200 characters");
+		}
 		List<CalendarEvent> submitted = request.events();
 		if (submitted == null) {
 			throw new SyllabusRequestException(HttpStatus.BAD_REQUEST, "events is required");
+		}
+		if (submitted.size() > MAX_EXPORT_EVENTS) {
+			throw new SyllabusRequestException(
+					HttpStatus.BAD_REQUEST, "events must contain at most 200 events");
 		}
 
 		List<ExtractedEvent> events = new ArrayList<>();
@@ -175,9 +194,23 @@ public class SyllabusController {
 			throw new SyllabusRequestException(
 					HttpStatus.BAD_REQUEST, "events[" + index + "].endTime must be after time");
 		}
+		String title = event.title().trim();
+		if (title.length() > MAX_TITLE_CHARS) {
+			throw new SyllabusRequestException(
+					HttpStatus.BAD_REQUEST, "events[" + index + "].title must be at most 300 characters");
+		}
 		String location = event.location() == null || event.location().isBlank() ? null : event.location().trim();
+		if (location != null && location.length() > MAX_LOCATION_CHARS) {
+			throw new SyllabusRequestException(
+					HttpStatus.BAD_REQUEST, "events[" + index + "].location must be at most 200 characters");
+		}
+		String sourceQuote = event.sourceQuote();
+		if (sourceQuote != null && sourceQuote.length() > MAX_SOURCE_QUOTE_CHARS) {
+			throw new SyllabusRequestException(
+					HttpStatus.BAD_REQUEST, "events[" + index + "].sourceQuote must be at most 500 characters");
+		}
 		return new ExtractedEvent(
-				event.title().trim(),
+				title,
 				event.type(),
 				event.date(),
 				event.time(),
@@ -185,7 +218,7 @@ public class SyllabusController {
 				location,
 				event.weightPercent(),
 				event.confidence(),
-				null);
+				sourceQuote);
 	}
 
 
