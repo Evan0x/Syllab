@@ -3,11 +3,22 @@ type TextFieldProps = {
   label: string
   value: string
   placeholder: string
+  type?: "text" | "password"
+  autoComplete?: string
   error?: string
   onChange: (value: string) => void
 }
 
-export function TextField({ id, label, value, placeholder, error, onChange }: TextFieldProps) {
+export function TextField({
+  id,
+  label,
+  value,
+  placeholder,
+  type = "text",
+  autoComplete = "off",
+  error,
+  onChange,
+}: TextFieldProps) {
   const errorId = `${id}-error`
   return (
     <div className="flex flex-col gap-2">
@@ -17,10 +28,10 @@ export function TextField({ id, label, value, placeholder, error, onChange }: Te
       <input
         id={id}
         name={id}
-        type="text"
+        type={type}
         value={value}
         placeholder={placeholder}
-        autoComplete="off"
+        autoComplete={autoComplete}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}

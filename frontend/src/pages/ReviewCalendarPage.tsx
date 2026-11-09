@@ -24,6 +24,8 @@ type ReviewTerm = {
 type ReviewCalendarPageProps = {
   preview: PreviewResponse | null
   term: ReviewTerm | null
+  email: string
+  onLogout: () => void
   onBack: () => void
 }
 
@@ -39,7 +41,7 @@ type EventGroup = {
 
 const MISSING = "Not specified"
 
-export function ReviewCalendarPage({ preview, term, onBack }: ReviewCalendarPageProps) {
+export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: ReviewCalendarPageProps) {
   const [events, setEvents] = useState<ReviewEvent[]>(() => (preview?.events ?? []).map(withId))
   const [editor, setEditor] = useState<"add" | string | null>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
@@ -115,7 +117,7 @@ export function ReviewCalendarPage({ preview, term, onBack }: ReviewCalendarPage
 
   return (
     <div className="bg-canvas text-ink">
-      <SiteHeader onHome={onBack} />
+      <SiteHeader email={email} onLogout={onLogout} onHome={onBack} />
       <main className="px-6 pt-9 pb-16 lg:px-10 lg:pt-[53px] xl:px-20">
         <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6">
           <header className="flex flex-col items-start gap-4">

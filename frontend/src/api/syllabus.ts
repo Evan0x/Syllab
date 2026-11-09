@@ -1,3 +1,5 @@
+import { apiFetch } from "./http.ts"
+
 export class SyllabusApiError extends Error {
   readonly status: number
 
@@ -42,7 +44,7 @@ type CreateCalendarInput = {
 export async function previewSyllabus(input: CreateCalendarInput): Promise<PreviewResponse> {
   let response: Response
   try {
-    response = await fetch("/api/syllabus/preview", {
+    response = await apiFetch("/api/syllabus/preview", {
       method: "POST",
       body: syllabusForm(input),
       signal: input.signal,
@@ -78,7 +80,7 @@ export async function exportCalendar(input: {
 }): Promise<CalendarDownload> {
   let response: Response
   try {
-    response = await fetch("/api/syllabus/export", {
+    response = await apiFetch("/api/syllabus/export", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -113,7 +115,7 @@ export function calendarFilename(courseName: string): string {
 export async function createCalendar(input: CreateCalendarInput): Promise<CalendarDownload> {
   let response: Response
   try {
-    response = await fetch("/api/syllabus", {
+    response = await apiFetch("/api/syllabus", {
       method: "POST",
       body: syllabusForm(input),
       signal: input.signal,

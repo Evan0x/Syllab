@@ -16,6 +16,8 @@ import { inspectSyllabusFile, type FileProblem } from "../lib/files.ts"
 type Phase = "form" | "loading" | "error"
 
 type LandingPageProps = {
+  email: string
+  onLogout: () => void
   onPreview: (preview: PreviewResponse, term: { termStart: string; termEnd: string }) => void
 }
 
@@ -24,7 +26,7 @@ const MISSING_COURSE = "Enter a course name to label your events."
 const MISSING_START = "Enter the first day of your semester."
 const MISSING_END = "Enter the last day of your semester."
 
-export function LandingPage({ onPreview }: LandingPageProps) {
+export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
   const [file, setFile] = useState<File | null>(null)
   const [problem, setProblem] = useState<FileProblem | null>(null)
   const [missingFile, setMissingFile] = useState<string>()
@@ -132,7 +134,7 @@ export function LandingPage({ onPreview }: LandingPageProps) {
 
   return (
     <div id="top" className="bg-canvas text-ink">
-      <SiteHeader />
+      <SiteHeader email={email} onLogout={onLogout} />
       <main>
         <section className="flex flex-col items-start gap-4 px-6 pt-9 pb-7 lg:items-center lg:gap-[18px] lg:px-10 lg:pt-[53px] lg:pb-[38px] xl:px-20">
           <p className="text-[10px] font-semibold tracking-[1.2px] text-indigo lg:text-[11px] lg:tracking-[1.7px]">
@@ -155,7 +157,7 @@ export function LandingPage({ onPreview }: LandingPageProps) {
               One upload. A clearer semester. No manual date entry.
             </span>
           </p>
-          <p className="text-[12px] text-indigo lg:hidden">Free to use. No account needed.</p>
+          <p className="text-[12px] text-indigo lg:hidden">Free to use.</p>
         </section>
 
         <section className="px-6 lg:px-10 xl:px-20">

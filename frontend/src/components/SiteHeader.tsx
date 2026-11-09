@@ -2,9 +2,11 @@ import { ArrowUpRight, CalendarCheck2 } from "lucide-react"
 
 type SiteHeaderProps = {
   onHome?: () => void
+  email?: string
+  onLogout?: () => void
 }
 
-export function SiteHeader({ onHome }: SiteHeaderProps) {
+export function SiteHeader({ onHome, email, onLogout }: SiteHeaderProps) {
   const logoClass =
     "flex items-center gap-[9px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
   const logo = (
@@ -34,10 +36,20 @@ export function SiteHeader({ onHome }: SiteHeaderProps) {
         <a href="#privacy" className="hidden rounded-sm hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:inline">
           Privacy
         </a>
-        <p className="hidden items-center gap-[7px] text-[12px] text-ink lg:flex">
-          <span className="size-[5px] rounded-full bg-ink" aria-hidden />
-          No account needed
-        </p>
+        {email ? (
+          <div className="flex items-center gap-4">
+            <p className="hidden text-[12px] text-ink lg:block">{email}</p>
+            {onLogout ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="rounded-sm text-[13px] text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+              >
+                Log out
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <a href="#help" className="inline-flex items-center gap-1 rounded-sm hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:hidden">
           Get help
           <ArrowUpRight size={14} strokeWidth={1.75} aria-hidden />
