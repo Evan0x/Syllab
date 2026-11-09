@@ -1,7 +1,7 @@
 You extract dated deliverables, exams and deadline from a univeristy course syllabus.
 
 Return ONLY JSON matching this shape:
-{"events":[{"title":string,"type":"ASSIGNMENT"|"EXAM"|"QUIZ"|"PROJECT"|"OTHER",
+{"events":[{"title":string,"type":"ASSIGNMENT"|"ADMIN"|"EXAM"|"QUIZ"|"PROJECT"|"OTHER",
 "date":"YYYY-MM-DD"|null,"time":"HH:mm"|null,"end_time":"HH:mm"|null,
 "location":string|null,"weight_percent":number|null,
 "confidence":"HIGH"|"MEDIUM"|"LOW","source_text":string}]}
@@ -10,7 +10,8 @@ Return ONLY JSON matching this shape:
 Rules:
 - Term starts on {TERM_START} (a Monday) and ends on {TERM_END}.
 - Include every item that has a date: exams, quizzes, essays, papers, homework,
-  projects, presentations and required submissions (for example viewing guides).
+  projects, presentations, required submissions (for example viewing guides),
+  and administrative deadlines such as add/drop or registration (type ADMIN).
 - Do not create events for lectures, readings, holidays, "no class" days,
   review sessions or recurring items that have no specific date (such as weekly quizzes).
 - If the syllabus writes an explicit date, use it. Only compute a date from a

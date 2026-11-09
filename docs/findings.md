@@ -67,6 +67,19 @@ Status: HIST 125 rerun through the app. MATH 125 was rerun in Docker on Nov 1. M
 | MATH 125 | 2 of 2 | 2 of 2 exams | end time and location; weight left empty | source quote says am; syllabus says pm |
 | MATH 114 | not rerun yet | | | |
 
+## The two runs
+
+Each row is one execution of the extractor. Recall is events returned with the right calendar date, over items the results table counted as in the syllabus. A wrong clock time is not counted as a wrong date. "Wrong among HIGH" is how many returned events were labeled HIGH and were still wrong. That label was not saved for either run.
+
+| Run | Commit the run used | Recall | Wrong dates | Extra events | Wrong among HIGH |
+|---|---|---|---|---|---|
+| Oct 29, three syllabi (MATH 125, MATH 114, HIST 125) | `8cc7458` | 9/29 counted items (9/12 if only explicit and table-derived dates) | 0 | 0 | not recorded |
+| Nov 1, after the prompt change (HIST 125 in the app, MATH 125 in Docker). MATH 114 was not in this run | `79e0f27` | HIST 125 explicit dates 7/7. MATH 125 exams 2/2; the two recurring items still missed | 0 | not recorded | not recorded |
+
+`8cc7458` is the Oct 29 tree. Its prompt has no end time, no location, and does not ask for viewing guides. The 9 returned events are the 9 correct cells in the table above (2 + 1 + 2 + 4), and the notes record no hallucinated date, so the extra-event count is 0. The 29 includes administrative dates and rule-derived dates that this run never returned.
+
+`79e0f27` is the commit that changed the prompt and the response schema. Nothing between it and the write-up in `be0b5f3` changes extraction. The three new HIST 125 events are the viewing guides that were already in the syllabus, so they are newly correct, not extra. This run did not count events that are not in the syllabus, so the extra-event count is not known. MATH 125 still has the right dates (2026-10-15 and 2026-12-15), but the source quote says 10:30 am where the syllabus says pm. That is one wrong time, and it is not in the wrong-date column.
+
 Verified in the generated .ics (HIST 125): the final exam has DTEND (16:15) and
 LOCATION (Exploratory Hall L004) in the same time zone as DTSTART.
 

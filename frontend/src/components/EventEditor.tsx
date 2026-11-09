@@ -18,7 +18,7 @@ type EventEditorProps = {
   onSave: (fields: EventFields) => void
 }
 
-const KNOWN_TYPES = ["EXAM", "QUIZ", "ASSIGNMENT"]
+const KNOWN_TYPES = ["EXAM", "QUIZ", "ASSIGNMENT", "ADMIN"]
 
 export function EventEditor({ heading, initial, onCancel, onSave }: EventEditorProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)

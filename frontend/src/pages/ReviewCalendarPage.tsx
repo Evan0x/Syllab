@@ -532,6 +532,9 @@ function typeClass(type: string | null): string {
   if (value === "ASSIGNMENT") {
     return "bg-well text-ink"
   }
+  if (value === "ADMIN") {
+    return "bg-indigo-soft text-indigo"
+  }
   return "bg-well text-placeholder"
 }
 

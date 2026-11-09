@@ -89,7 +89,7 @@ public class SyllabusController {
 		}
 
 		List<ExtractedEvent> extracted = eventExtractor.extract(syllabusText, termStart, termEnd);
-		ValidationResult validated = eventValidator.validate(extracted, termStart, termEnd);
+		ValidationResult validated = eventValidator.validate(extracted, termStart, termEnd, syllabusText);
 		String ics = icsBuilder.build(validated.validEvents(), course);
 
 		ContentDisposition disposition = ContentDisposition.attachment()
@@ -132,7 +132,7 @@ public class SyllabusController {
 		}
 
 		List<ExtractedEvent> extracted = eventExtractor.extract(syllabusText, termStart, termEnd);
-		ValidationResult validated = eventValidator.validate(extracted, termStart, termEnd);
+		ValidationResult validated = eventValidator.validate(extracted, termStart, termEnd, syllabusText);
 		List<CalendarEvent> events = validated.validEvents().stream()
 				.map(event -> new CalendarEvent(
 						event.title(),

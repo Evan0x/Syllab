@@ -27,6 +27,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -123,6 +126,28 @@ class SyllabusControllerTest {
 	}
 
 	@Test
+	void previewLowersConfidenceWhenTheQuoteIsMissing() throws Exception {
+		String present = "The quiz is scheduled for Monday.";
+		String absent = "This sentence is not in the file.";
+		MockMultipartFile file = new MockMultipartFile(
+				"file", "syllabus.pdf", "application/pdf", pdf(present + " " + "a".repeat(220)));
+
+		mockMvc.perform(multipart("/api/syllabus/preview")
+						.file(file)
+						.param("courseName", "MATH 101")
+						.param("termStart", "2026-08-24")
+						.param("termEnd", "2026-12-16"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.events[0].title").value("Exam 1"))
+				.andExpect(jsonPath("$.events[0].confidence").value("HIGH"))
+				.andExpect(jsonPath("$.events[1].title").value("Quiz 2"))
+				.andExpect(jsonPath("$.events[1].confidence").value("LOW"))
+				.andExpect(jsonPath("$.warnings", hasItem(containsString("Quiz 2"))))
+				.andExpect(jsonPath("$.warnings", everyItem(not(containsString(absent)))))
+				.andExpect(jsonPath("$.warnings", everyItem(not(containsString(present)))));
+	}
+
+	@Test
 	void rejectsExtractionFailure() throws Exception {
 		MockMultipartFile file = new MockMultipartFile(
 				"file", "syllabus.pdf", "application/pdf", pdf("FAIL_EXTRACTION " + "b".repeat(200)));
@@ -161,6 +186,22 @@ class SyllabusControllerTest {
 			return (syllabusText, termStart, termEnd) -> {
 				if (syllabusText.contains("FAIL_EXTRACTION")) {
 					throw new ExtractionException("Could not extract events from the syllabus");
+				}
+				String present = "The quiz is scheduled for Monday.";
+				if (syllabusText.contains(present)) {
+					return List.of(
+							new ExtractedEvent(
+									"Exam 1", "EXAM", termStart.plusDays(7), null, null, null, 20.0, "HIGH", present),
+							new ExtractedEvent(
+									"Quiz 2",
+									"QUIZ",
+									termStart.plusDays(8),
+									null,
+									null,
+									null,
+									10.0,
+									"MEDIUM",
+									"This sentence is not in the file."));
 				}
 				return List.of(new ExtractedEvent(
 						"Exam 1",

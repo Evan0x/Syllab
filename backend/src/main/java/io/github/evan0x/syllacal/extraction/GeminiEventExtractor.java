@@ -178,7 +178,7 @@ public class GeminiEventExtractor implements EventExtractor {
 		eventProperties.put("title", Map.of("type", "STRING"));
 		eventProperties.put("type", Map.of(
 				"type", "STRING",
-				"enum", List.of("ASSIGNMENT", "EXAM", "QUIZ", "PROJECT", "OTHER")));
+				"enum", List.of("ASSIGNMENT", "ADMIN", "EXAM", "QUIZ", "PROJECT", "OTHER")));
 		eventProperties.put("date", nullableString());
 		eventProperties.put("time", nullableString());
 		eventProperties.put("end_time", nullableString());

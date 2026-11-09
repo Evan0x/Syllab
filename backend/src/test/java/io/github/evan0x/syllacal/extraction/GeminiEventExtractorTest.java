@@ -74,6 +74,34 @@ class GeminiEventExtractorTest {
 	}
 
 	@Test
+	void parseEventsJsonKeepsAdminType() {
+		String json = """
+				{
+				  "events": [
+				    {
+				      "title": "Add/drop deadline",
+				      "type": "ADMIN",
+				      "date": "2026-09-08",
+				      "time": null,
+				      "end_time": null,
+				      "location": null,
+				      "weight_percent": null,
+				      "confidence": "HIGH",
+				      "source_text": "Add/drop deadline is September 8"
+				    }
+				  ]
+				}
+				""";
+
+		List<ExtractedEvent> events = extractor.parseEventsJson(json);
+
+		assertEquals(1, events.size());
+		assertEquals("ADMIN", events.getFirst().type());
+		assertEquals("Add/drop deadline", events.getFirst().title());
+		assertEquals(LocalDate.of(2026, 9, 8), events.getFirst().date());
+	}
+
+	@Test
 	void parseEventsJsonThrowsWhenNotValidJson() {
 		ExtractionException ex = assertThrows(ExtractionException.class,
 				() -> extractor.parseEventsJson("not-json"));
