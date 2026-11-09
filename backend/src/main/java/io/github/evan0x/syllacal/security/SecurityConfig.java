@@ -1,5 +1,6 @@
 package io.github.evan0x.syllacal.security;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +38,7 @@ public class SecurityConfig {
 							response.getWriter().write("{\"message\":\"Forbidden\"}");
 						}))
 				.authorizeHttpRequests(auth -> auth
+						.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 						.requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.svg", "/favicon.ico", "/assets/**")
 						.permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
