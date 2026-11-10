@@ -5,7 +5,7 @@ export function SiteFooter() {
         A little peace of mind. Always double-check dates against your syllabus.
       </p>
       <div className="mt-5 flex items-center justify-between lg:contents">
-        <p className="lg:order-1">© 2026 SyllaCal</p>
+        <p className="lg:order-1">© 2026 Syllapin</p>
         <p className="whitespace-pre lg:order-3">
           <a href="#privacy" className="hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo">
             Privacy

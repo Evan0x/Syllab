@@ -109,7 +109,7 @@ export function calendarFilename(courseName: string): string {
     .trim()
     .replace(/[^A-Za-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-  return `${safe || "syllacal"}-calendar.ics`
+  return `${safe || "syllapin"}-calendar.ics`
 }
 
 export async function createCalendar(input: CreateCalendarInput): Promise<CalendarDownload> {

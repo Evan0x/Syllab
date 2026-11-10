@@ -149,10 +149,10 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
           </h1>
           <p className="max-w-[620px] text-[15px] leading-[1.65] text-muted lg:text-center lg:text-[16px]">
             <span className="lg:hidden">
-              Turn your syllabus PDF into a calendar of classes, assignments and exams. One upload. A clearer semester.
+              Syllapin turns your syllabus PDF into a calendar of classes, assignments and exams. One upload. A clearer semester.
             </span>
             <span className="hidden lg:block">
-              Turn your syllabus PDF into a calendar of classes, assignments and exams.
+              Syllapin turns your syllabus PDF into a calendar of classes, assignments and exams.
               <br />
               One upload. A clearer semester. No manual date entry.
             </span>

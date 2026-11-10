@@ -14,7 +14,7 @@ export function SiteHeader({ onHome, email, onLogout }: SiteHeaderProps) {
       <span className="flex size-[29px] items-center justify-center rounded-[7px] bg-indigo text-white">
         <CalendarCheck2 size={18} strokeWidth={1.75} aria-hidden />
       </span>
-      <span className="text-[20px] tracking-[-0.7px] text-ink">SyllaCal</span>
+      <span className="text-[20px] tracking-[-0.7px] text-ink">Syllapin</span>
     </>
   )
 

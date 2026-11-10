@@ -1,8 +1,8 @@
 Early-stage demo, under active development.
 
-# SyllaCal
+# Syllapin
 
-SyllaCal takes a course syllabus PDF, lets you review the extracted dates, and downloads an `.ics` calendar of assignments, quizzes, and exams.
+Syllapin helps students turn course syllabi into organized calendars.
 
 ## Demo
 

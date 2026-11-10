@@ -49,7 +49,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
           </h1>
           <p className="text-[14px] leading-[1.5] text-muted">
             {mode === "login"
-              ? "Use the email and password for your SyllaCal account."
+              ? "Use the email and password for your Syllapin account."
               : "Registration needs an invite code. Your password must be at least 10 characters."}
           </p>
         </div>
