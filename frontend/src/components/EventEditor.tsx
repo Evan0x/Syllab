@@ -14,13 +14,14 @@ export type EventFields = {
 type EventEditorProps = {
   heading: string
   initial: EventFields
+  notice?: string
   onCancel: () => void
   onSave: (fields: EventFields) => void
 }
 
 const KNOWN_TYPES = ["EXAM", "QUIZ", "ASSIGNMENT", "ADMIN"]
 
-export function EventEditor({ heading, initial, onCancel, onSave }: EventEditorProps) {
+export function EventEditor({ heading, initial, notice, onCancel, onSave }: EventEditorProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const [title, setTitle] = useState(initial.title)
@@ -129,9 +130,9 @@ export function EventEditor({ heading, initial, onCancel, onSave }: EventEditorP
         </div>
         <Field label="Location" value={location} onChange={setLocation} placeholder="Optional" />
         <Field label="Weight percentage" value={weight} onChange={setWeight} placeholder="Optional" />
-        {error ? (
+        {error || notice ? (
           <p role="alert" className="text-[12px] leading-[1.45] text-error">
-            {error}
+            {error ?? notice}
           </p>
         ) : null}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

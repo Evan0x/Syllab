@@ -6,6 +6,7 @@ import { AuthPage } from "./pages/AuthPage.tsx"
 import { LandingPage } from "./pages/LandingPage.tsx"
 import { LegalDocumentPage } from "./pages/LegalDocumentPage.tsx"
 import { ReviewCalendarPage } from "./pages/ReviewCalendarPage.tsx"
+import { SavedCalendarPage } from "./pages/SavedCalendarPage.tsx"
 
 type ReviewTerm = {
   termStart: string
@@ -70,6 +71,17 @@ export default function App() {
 
   if (account === null) {
     return <AuthPage onAuthenticated={setAccount} />
+  }
+
+  if (window.location.pathname.replace(/\/+$/, "") === "/calendar") {
+    return (
+      <SavedCalendarPage
+        email={account.email}
+        onLogout={() => {
+          void onLogout()
+        }}
+      />
+    )
   }
 
   return (

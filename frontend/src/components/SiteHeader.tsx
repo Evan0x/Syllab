@@ -23,28 +23,34 @@ export function SiteHeader({ onHome, email, onLogout }: SiteHeaderProps) {
           {logo}
         </a>
       )}
-      <nav aria-label="Page" className="flex items-center gap-8 text-[13px] text-muted">
-        <a href="#how-it-works" className="hidden rounded-sm hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:inline">
+      <nav aria-label="Page" className="flex items-center gap-4 text-[13px] text-muted lg:gap-8">
+        <a href="#how-it-works" className="hidden rounded-sm whitespace-nowrap hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:inline">
           How it works
         </a>
-        <a href="#privacy" className="hidden rounded-sm hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:inline">
+        <a href="#privacy" className="hidden rounded-sm whitespace-nowrap hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:inline">
           Privacy
         </a>
         {email ? (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <a
+              href="/calendar"
+              className="rounded-sm whitespace-nowrap text-ink hover:text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            >
+              Calendar
+            </a>
             <p className="hidden text-[12px] text-ink lg:block">{email}</p>
             {onLogout ? (
               <button
                 type="button"
                 onClick={onLogout}
-                className="rounded-sm text-[13px] text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+                className="rounded-sm whitespace-nowrap text-[13px] text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
               >
                 Log out
               </button>
             ) : null}
           </div>
         ) : null}
-        <a href="#help" className="inline-flex items-center gap-1 rounded-sm hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:hidden">
+        <a href="#help" className="inline-flex items-center gap-1 rounded-sm whitespace-nowrap hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:hidden">
           Get help
           <ArrowUpRight size={14} strokeWidth={1.75} aria-hidden />
         </a>
