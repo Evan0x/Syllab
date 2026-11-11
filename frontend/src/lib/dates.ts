@@ -61,6 +61,12 @@ export function formatMonthHeading(iso: string): string {
   return parseIsoDate(iso).toLocaleDateString("en-US", { month: "long", year: "numeric" })
 }
 
+export function saturdayOfWeek(iso: string): string {
+  const date = parseIsoDate(iso)
+  const daysUntilSaturday = (6 - date.getDay() + 7) % 7
+  return isoDate(addDays(date, daysUntilSaturday))
+}
+
 export function formatTermRange(start: string, end: string): string {
   const startDate = parseIsoDate(start)
   const endDate = parseIsoDate(end)

@@ -7,6 +7,7 @@ export function PageShell({
   onLogout,
   onHome,
   logoHref,
+  reviewing = false,
   contained = true,
   children,
 }: {
@@ -14,6 +15,7 @@ export function PageShell({
   onLogout: () => void
   onHome?: () => void
   logoHref?: string
+  reviewing?: boolean
   contained?: boolean
   children: ReactNode
 }) {
@@ -22,7 +24,7 @@ export function PageShell({
       <a href="#main" className="skip-link">
         Skip to content
       </a>
-      <SiteHeader email={email} onLogout={onLogout} onHome={onHome} logoHref={logoHref} />
+      <SiteHeader email={email} onLogout={onLogout} onHome={onHome} logoHref={logoHref} reviewing={reviewing} />
       <main id="main" className={contained ? "px-5 pt-8 pb-16 lg:px-8 lg:pt-10 xl:px-12" : undefined}>
         {contained ? <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6">{children}</div> : children}
       </main>
