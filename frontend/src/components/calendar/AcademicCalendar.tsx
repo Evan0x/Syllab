@@ -520,10 +520,6 @@ function shift(date: Date, view: CalendarView, direction: number): Date {
   return new Date(date.getFullYear(), date.getMonth() + direction, 1)
 }
 
-function firstDated(events: CalendarItem[]): Date | null {
-  const dated = events.map((event) => event.date).filter(Boolean).sort()
-  return dated[0] ? parseIsoDate(dated[0]) : null
-}
 
 function groupByDate(events: CalendarItem[]): Map<string, CalendarItem[]> {
   const grouped = new Map<string, CalendarItem[]>()
