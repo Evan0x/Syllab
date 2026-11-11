@@ -4,14 +4,6 @@ Early-stage demo, under active development.
 
 Syllapin helps students turn course syllabi into organized calendars.
 
-## Demo
-
-
-
-https://github.com/user-attachments/assets/5e1b23e3-cfa0-4106-89bb-6b0eef898571
-
-
-
 ## Features
 
 - Upload a PDF, a course name, and a term start and end date.
