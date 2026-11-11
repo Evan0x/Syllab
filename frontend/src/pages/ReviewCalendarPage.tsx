@@ -1,5 +1,5 @@
 import { ArrowLeft, Download, LoaderCircle, Plus, TriangleAlert } from "lucide-react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { saveReviewedCalendar } from "../api/events.ts"
 import { downloadBlob, exportCalendar, isAbortError, SyllabusApiError } from "../api/syllabus.ts"
 import type { CalendarEvent, PreviewResponse } from "../api/syllabus.ts"
@@ -10,6 +10,7 @@ import { ConfirmDialog } from "../components/ConfirmDialog.tsx"
 import { EmptyState } from "../components/EmptyState.tsx"
 import { EventEditor } from "../components/EventEditor.tsx"
 import type { EventFields } from "../components/EventEditor.tsx"
+import { NextSteps } from "../components/NextSteps.tsx"
 import { PageHeader } from "../components/PageHeader.tsx"
 import { PageShell } from "../components/PageShell.tsx"
 import {
@@ -60,10 +61,13 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
   const [exportError, setExportError] = useState<string>()
   const [exported, setExported] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [onlyNeedsCheck, setOnlyNeedsCheck] = useState(false)
   const exportingRef = useRef(false)
   const calendarOpened = useRef(false)
   const saveSeq = useRef(0)
-  const groups = groupEvents(events)
+  const needsCheck = events.filter(needsALook)
+  const visibleEvents = onlyNeedsCheck ? needsCheck : events
+  const groups = groupEvents(visibleEvents)
   const [chosenMonth, setChosenMonth] = useState(groups[0]?.key ?? "")
   const activeMonth = groups.some((group) => group.key === chosenMonth)
     ? chosenMonth
@@ -71,6 +75,18 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
   const semester = term?.termStart && term.termEnd ? formatTermRange(term.termStart, term.termEnd) : null
   const editing = editor && editor !== "add" ? events.find((event) => event.id === editor) : undefined
   const pendingDelete = events.find((event) => event.id === pendingDeleteId)
+
+  useEffect(() => {
+    if (saved) {
+      return
+    }
+    function warn(event: BeforeUnloadEvent) {
+      event.preventDefault()
+      event.returnValue = ""
+    }
+    window.addEventListener("beforeunload", warn)
+    return () => window.removeEventListener("beforeunload", warn)
+  }, [saved])
 
   function showMonth(key: string) {
     setChosenMonth(key)
@@ -171,13 +187,17 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
   }
 
   return (
-    <PageShell email={email} onLogout={onLogout} onHome={onBack}>
+    <PageShell email={email} onLogout={onLogout} onHome={onBack} reviewing>
           <PageHeader
-            eyebrow="Review"
+            eyebrow="Review dates"
             title={preview?.courseName || "Calendar preview"}
-            description={semester ? `${semester}. Check anything that looks uncertain before you save or export.` : "Check anything that looks uncertain before you save or export."}
+            description={
+              semester
+                ? `${semester}. Confirm titles and dates, then save. Marked rows need a closer look.`
+                : "Confirm titles and dates, then save. Marked rows need a closer look."
+            }
           >
-            {preview ? <EventStats events={events} /> : null}
+            {preview ? <EventStats events={events} needsCheck={needsCheck.length} /> : null}
           </PageHeader>
 
           {!preview ? (
@@ -204,7 +224,7 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
                     aria-selected={!showCalendar}
                     onClick={() => setShowCalendar(false)}
                   >
-                    Review list
+                    List
                   </button>
                   <button
                     type="button"
@@ -215,16 +235,26 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
                     Calendar
                   </button>
                 </div>
-                <p className={`text-[12px] ${saveError ? "text-error" : "text-muted"}`} role={saveError ? "alert" : "status"} aria-live="polite">
-                  {saving
-                    ? "Saving to your calendar…"
-                    : saveError
-                      ? saveError
-                      : saved
-                        ? "Saved to your calendar"
-                        : "Open calendar view to keep these dates on Syllapin."}
-                </p>
+                {needsCheck.length > 0 && !showCalendar ? (
+                  <div className="segmented" role="tablist" aria-label="Review filter">
+                    <button type="button" role="tab" aria-selected={!onlyNeedsCheck} onClick={() => setOnlyNeedsCheck(false)}>
+                      All dates
+                    </button>
+                    <button type="button" role="tab" aria-selected={onlyNeedsCheck} onClick={() => setOnlyNeedsCheck(true)}>
+                      Needs a look ({needsCheck.length})
+                    </button>
+                  </div>
+                ) : null}
               </div>
+              <p className={`text-[12px] ${saveError ? "text-error" : "text-muted"}`} role={saveError ? "alert" : "status"} aria-live="polite">
+                {saving
+                  ? "Saving to your calendar…"
+                  : saveError
+                    ? saveError
+                    : saved
+                      ? "Saved to your calendar. Workload and Advisor can use these dates."
+                      : "Save to keep these dates on Syllapin. Export is optional."}
+              </p>
               {showCalendar ? (
                 <AcademicCalendar
                   events={events.filter((event) => event.date && event.title?.trim()).map((event) => toCalendarItem(event, preview.courseName))}
@@ -301,17 +331,27 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
               </div>
               </>
               )}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <Button icon={Plus} variant="secondary" onClick={() => setEditor("add")}>
                   Add event
                 </Button>
                 <Button
                   icon={exporting ? LoaderCircle : Download}
+                  variant="secondary"
                   disabled={exporting}
                   spinIcon={exporting}
                   onClick={() => void exportIcs()}
                 >
-                  {exporting ? "Exporting calendar…" : "Export .ics file"}
+                  {exporting ? "Exporting…" : "Export .ics"}
+                </Button>
+                <Button
+                  disabled={saving}
+                  onClick={() => {
+                    calendarOpened.current = true
+                    void persist(events)
+                  }}
+                >
+                  {saving ? "Saving…" : saved ? "Saved to calendar" : "Save to calendar"}
                 </Button>
               </div>
               {exportError ? (
@@ -320,8 +360,18 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
                 </p>
               ) : exported ? (
                 <p role="status" className="text-[12px] leading-[1.45] text-success">
-                  Calendar downloaded. Import the .ics file into Google Calendar, Apple Calendar, or Outlook.
+                  Downloaded. Import the .ics file into Google Calendar, Apple Calendar, or Outlook.
                 </p>
+              ) : null}
+              {saved ? (
+                <NextSteps
+                  label="Continue"
+                  items={[
+                    { href: "/", label: "Open calendar" },
+                    { href: "/workload", label: "See this week’s workload" },
+                    { href: "/advisor", label: "Ask the advisor" },
+                  ]}
+                />
               ) : null}
             </>
           )}
@@ -331,7 +381,7 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
             onClick={onBack}
             className="w-fit text-[13px] font-medium text-indigo hover:text-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
           >
-            Upload another syllabus
+            Upload a different syllabus
           </button>
       {editor === "add" ? (
         <EventEditor
@@ -362,12 +412,12 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
   )
 }
 
-function EventStats({ events }: { events: CalendarEvent[] }) {
+function EventStats({ events, needsCheck }: { events: CalendarEvent[]; needsCheck: number }) {
   const stats = [
     ["Events", events.length],
     ["Exams", countType(events, "EXAM")],
-    ["Quizzes", countType(events, "QUIZ")],
     ["Assignments", countType(events, "ASSIGNMENT")],
+    ["Need a look", needsCheck],
   ] as const
 
   return (
@@ -438,23 +488,30 @@ function EventRow({
           <Detail label="Weight" value={formatWeight(event.weightPercent)} />
         </dl>
         {showQuote ? (
-          <details className="mt-3">
-            <summary className="cursor-pointer text-[12px] text-muted hover:text-ink">Show syllabus quote</summary>
-            <p className="mt-2 border-l-2 border-indigo-line pl-3 text-[12px] leading-[1.55] text-muted">{quote}</p>
-          </details>
+          event.confidence?.trim().toUpperCase() === "LOW" ? (
+            <p className="mt-3 border-l-2 border-indigo-line pl-3 text-[12px] leading-5 text-muted">
+              <span className="text-ink">From the syllabus. </span>
+              {quote}
+            </p>
+          ) : (
+            <details className="mt-3">
+              <summary className="cursor-pointer text-[12px] text-muted hover:text-ink">Show syllabus quote</summary>
+              <p className="mt-2 border-l-2 border-indigo-line pl-3 text-[12px] leading-5 text-muted">{quote}</p>
+            </details>
+          )
         ) : null}
         <div className="mt-3 flex gap-4">
           <button
             type="button"
             onClick={onEdit}
-            className="text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            className="rounded text-[12px] text-indigo hover:text-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
           >
             Edit
           </button>
           <button
             type="button"
             onClick={onDelete}
-            className="text-[12px] text-error focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            className="rounded text-[12px] text-error hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
           >
             Delete
           </button>
@@ -587,8 +644,14 @@ function confidenceLabel(value: string | null): string {
     return MISSING
   }
   const level = trimmed.toUpperCase()
-  if (level === "HIGH" || level === "MEDIUM" || level === "LOW") {
-    return `${level.charAt(0)}${level.slice(1).toLowerCase()}`
+  if (level === "HIGH") {
+    return "Looks right"
+  }
+  if (level === "MEDIUM") {
+    return "Double-check"
+  }
+  if (level === "LOW") {
+    return "Needs a look"
   }
   return trimmed
 }
@@ -605,6 +668,10 @@ function confidenceClass(value: string | null): string {
     return "bg-error-soft text-error"
   }
   return "bg-well text-placeholder"
+}
+
+function needsALook(event: ReviewEvent): boolean {
+  return event.confidence?.trim().toUpperCase() === "LOW" || !event.date || !event.title?.trim()
 }
 
 function formatWeight(value: number | null): string | null {

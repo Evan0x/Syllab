@@ -5,6 +5,7 @@ import type { CourseLoad, DayLoad, WeekLoad, WorkloadInsights, WorkloadReport } 
 import { SyllabusApiError } from "../api/syllabus.ts"
 import { Button } from "../components/Button.tsx"
 import { EmptyState } from "../components/EmptyState.tsx"
+import { NextSteps } from "../components/NextSteps.tsx"
 import { PageHeader } from "../components/PageHeader.tsx"
 import { PageShell } from "../components/PageShell.tsx"
 import { formatLongDate, formatMonthDay, formatTermRange, formatWeekday, isoDate } from "../lib/dates.ts"
@@ -58,13 +59,21 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
     <PageShell email={email} onLogout={onLogout}>
           <PageHeader
             eyebrow="Workload"
-            title="This semester at a glance"
+            title="Where the pressure is"
             description={
               report?.semesterStart && report.semesterEnd
-                ? `${formatTermRange(report.semesterStart, report.semesterEnd)}. Counts come from confirmed calendar events, not estimates of hours.`
-                : "Counts come from the courses and confirmed events already on your calendar."
+                ? `${formatTermRange(report.semesterStart, report.semesterEnd)}. Counts from saved calendar events, not hours of work.`
+                : "Counts from the courses and confirmed events already on your calendar."
             }
-          />
+          >
+            <NextSteps
+              items={[
+                { href: "/", label: "Open calendar" },
+                { href: "/advisor", label: "Ask how to plan this" },
+                { href: "/upload", label: "Add a course" },
+              ]}
+            />
+          </PageHeader>
 
           {report === null && !error ? (
             <EmptyState
@@ -91,11 +100,11 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
             <EmptyState
               icon={CalendarDays}
               title="No saved deadlines yet"
-              message="Review a syllabus and open its calendar. This page counts those confirmed dates. It does not estimate how long work will take."
+              message="Add a syllabus, review the dates, and save them to the calendar. This page then shows which weeks are busiest."
               action={
-                <a href="/" className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo px-4 text-[13px] font-medium text-white hover:bg-indigo-deep">
+                <a href="/upload" className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo px-4 text-[13px] font-medium text-white hover:bg-indigo-deep active:bg-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo">
                   <Upload size={17} strokeWidth={1.75} aria-hidden />
-                  Upload a syllabus
+                  Add a course
                 </a>
               }
             />
@@ -103,7 +112,15 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
 
           {report && !empty ? (
             <>
-              <section aria-label="Overview" className="panel grid grid-cols-2 lg:grid-cols-6">
+              <p className="text-[13px] leading-5 text-ink">
+                {report.dueThisWeek} due through Saturday
+                {report.dueNextWeek > 0 ? ` · ${report.dueNextWeek} next week` : ""}
+                {report.busiestWeek
+                  ? ` · Busiest stretch ${formatTermRange(report.busiestWeek.start, report.busiestWeek.end)} (${report.busiestWeek.events} events)`
+                  : ""}
+                .
+              </p>
+              <section aria-label="Overview" className="overflow-hidden rounded-lg border border-hairline bg-hairline grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px">
                 <Metric label="Active courses" value={report.activeCourses} detail="Terms that include today" />
                 <Metric label="Upcoming assignments" value={report.upcomingAssignments} detail="Assignments and projects" />
                 <Metric label="Upcoming exams" value={report.upcomingExams} detail="Quizzes are counted separately" />
@@ -174,6 +191,12 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
                           <p className="mt-1 text-[12px] text-muted">{week.events} events · {week.reasons.join(" · ")}</p>
                         </li>
                       ))}
+                      {report.crowdedDays.map((day) => (
+                        <li key={day.date} className="rounded-md bg-indigo-soft px-3 py-2.5">
+                          <p className="text-[13px] text-ink">{formatLongDate(day.date)}</p>
+                          <p className="mt-1 text-[12px] text-muted">{day.events} events on this day</p>
+                        </li>
+                      ))}
                       {report.overlaps.map((overlap) => (
                         <li key={overlap.date} className="rounded-md bg-error-soft px-3 py-2.5">
                           <p className="text-[13px] text-ink">{formatLongDate(overlap.date)}</p>
@@ -238,7 +261,7 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
 
 function Metric({ label, value, detail }: { label: string; value: number; detail: string }) {
   return (
-    <article className="border-b border-hairline px-4 py-3.5 last:border-b-0 even:border-l lg:border-b-0 lg:border-r lg:last:border-r-0 lg:even:border-l-0">
+    <article className="bg-surface px-4 py-3.5">
       <p className="text-[11px] font-medium text-muted">{label}</p>
       <p className="mt-1 text-[22px] leading-none font-medium tracking-[-0.03em] tabular-nums text-ink">{value}</p>
       <p className="mt-1.5 text-[12px] leading-4 text-muted">{detail}</p>

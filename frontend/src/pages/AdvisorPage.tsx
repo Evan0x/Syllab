@@ -135,7 +135,7 @@ export function AdvisorPage({ email, onLogout }: { email: string; onLogout: () =
               title="No saved courses yet"
               message="Review a syllabus and open its calendar. The advisor reads those confirmed events. The original file is not kept."
               action={
-                <a href="/" className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo px-4 text-[13px] font-medium text-white hover:bg-indigo-deep">
+                <a href="/" className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo px-4 text-[13px] font-medium text-white hover:bg-indigo-deep active:bg-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo">
                   <Upload size={17} strokeWidth={1.75} aria-hidden />
                   Upload a syllabus
                 </a>
@@ -195,7 +195,7 @@ export function AdvisorPage({ email, onLogout }: { email: string; onLogout: () =
                       type="button"
                       onClick={() => void submit(prompt)}
                       disabled={asking || chosenIds.length === 0}
-                      className="rounded-md border border-hairline px-3 py-1.5 text-left text-[12px] text-ink hover:border-indigo disabled:text-disabled-ink"
+                      className="rounded-md border border-hairline px-3 py-1.5 text-left text-[12px] text-ink hover:border-indigo hover:bg-indigo-soft disabled:cursor-not-allowed disabled:text-disabled-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
                     >
                       {prompt}
                     </button>
@@ -264,7 +264,7 @@ export function AdvisorPage({ email, onLogout }: { email: string; onLogout: () =
                   type="button"
                   onClick={() => void submit("Summarize the selected courses using only the saved events, weights, and counts.")}
                   disabled={asking || chosenIds.length === 0}
-                  className="mt-3 text-[12px] text-indigo disabled:text-disabled-ink"
+                  className="mt-3 text-[12px] text-indigo hover:text-indigo-deep disabled:cursor-not-allowed disabled:text-disabled-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo focus-visible:rounded-sm"
                 >
                   Summarize selected courses
                 </button>

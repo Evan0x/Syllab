@@ -10,8 +10,10 @@ import { ConfirmDialog } from "../components/ConfirmDialog.tsx"
 import { EmptyState } from "../components/EmptyState.tsx"
 import { EventEditor } from "../components/EventEditor.tsx"
 import type { EventFields } from "../components/EventEditor.tsx"
+import { NextSteps } from "../components/NextSteps.tsx"
 import { PageHeader } from "../components/PageHeader.tsx"
 import { PageShell } from "../components/PageShell.tsx"
+import { formatLongDate, formatTimeRange, isoDate, saturdayOfWeek } from "../lib/dates.ts"
 import { usePageTitle } from "../lib/pageTitle.ts"
 
 export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout: () => void }) {
@@ -21,6 +23,7 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
   const [editingId, setEditingId] = useState<string | null>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string>()
+  const [actionLoading, setActionLoading] = useState(false)
   const request = useRef(0)
 
   function load() {
@@ -52,24 +55,28 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
   const pendingDelete = events?.find((event) => event.id === pendingDeleteId)
 
   async function saveEdit(fields: EventFields) {
-    if (!editing) {
+    if (!editing || actionLoading) {
       return
     }
     setActionError(undefined)
+    setActionLoading(true)
     try {
       const saved = await updateEvent(editing.id, fields)
       setEvents((current) => (current ?? []).map((event) => (event.id === saved.id ? toCalendarItem(saved) : event)))
       setEditingId(null)
     } catch (caught) {
       setActionError(caught instanceof SyllabusApiError ? caught.message : "Could not save this event")
+    } finally {
+      setActionLoading(false)
     }
   }
 
   async function confirmDelete() {
-    if (!pendingDelete) {
+    if (!pendingDelete || actionLoading) {
       return
     }
     setActionError(undefined)
+    setActionLoading(true)
     try {
       await deleteEvent(pendingDelete.id)
       setEvents((current) => (current ?? []).filter((event) => event.id !== pendingDelete.id))
@@ -77,6 +84,8 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
     } catch (caught) {
       setPendingDeleteId(null)
       setActionError(caught instanceof SyllabusApiError ? caught.message : "Could not delete this event")
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -84,9 +93,17 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
     <PageShell email={email} onLogout={onLogout}>
       <PageHeader
         eyebrow="Calendar"
-        title="Your saved dates"
-        description="Confirmed events from syllabi you have reviewed. Edit anything that needs a second look."
-      />
+        title="What’s coming up"
+        description="Confirmed dates from syllabi you’ve reviewed. This is the schedule Workload and Advisor read."
+      >
+        <NextSteps
+          items={[
+            { href: "/upload", label: "Add a course" },
+            { href: "/workload", label: "This week’s workload" },
+            { href: "/advisor", label: "Ask the advisor" },
+          ]}
+        />
+      </PageHeader>
       {events === null ? (
         <EmptyState
           icon={LoaderCircle}
@@ -109,26 +126,27 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
       ) : events.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
-          title="No saved events yet"
-          message="Review a syllabus and open its calendar view to keep the dates here."
+          title="Add a syllabus to build this calendar"
+          message="Upload one PDF, check the extracted dates, then save. After that, this page shows what’s due next."
           action={
-            <a href="/" className="inline-flex">
-              <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo px-4 text-[13px] font-medium text-white hover:bg-indigo-deep">
-                <Upload size={17} strokeWidth={1.75} aria-hidden />
-                Upload a syllabus
-              </span>
+            <a href="/upload" className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo px-4 text-[13px] font-medium text-white hover:bg-indigo-deep active:bg-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo">
+              <Upload size={17} strokeWidth={1.75} aria-hidden />
+              Add a course
             </a>
           }
         />
       ) : (
-        <AcademicCalendar
-          events={events}
-          onEdit={(event) => {
-            setActionError(undefined)
-            setEditingId(event.id)
-          }}
-          onDelete={(event) => setPendingDeleteId(event.id)}
-        />
+        <>
+          <UpcomingStrip events={events} />
+          <AcademicCalendar
+            events={events}
+            onEdit={(event) => {
+              setActionError(undefined)
+              setEditingId(event.id)
+            }}
+            onDelete={(event) => setPendingDeleteId(event.id)}
+          />
+        </>
       )}
       {actionError ? (
         <p role="alert" className="text-[12px] leading-[1.45] text-error">
@@ -148,6 +166,7 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
             weightPercent: editing.weightPercent,
           }}
           notice={actionError}
+          saving={actionLoading}
           onCancel={() => setEditingId(null)}
           onSave={(fields) => {
             void saveEdit(fields)
@@ -167,6 +186,61 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
       ) : null}
     </PageShell>
   )
+}
+
+function UpcomingStrip({ events }: { events: CalendarItem[] }) {
+  const today = isoDate(new Date())
+  const weekEnd = saturdayOfWeek(today)
+  const upcoming = [...events]
+    .filter((event) => event.date && event.date >= today)
+    .sort((left, right) => `${left.date}${left.time ?? ""}`.localeCompare(`${right.date}${right.time ?? ""}`))
+  const dueThisWeek = upcoming.filter((event) => event.date <= weekEnd)
+  const next = upcoming.slice(0, 5)
+  const examsSoon = upcoming.filter((event) => event.type?.trim().toUpperCase() === "EXAM").slice(0, 2)
+
+  if (next.length === 0) {
+    return (
+      <section className="panel px-5 py-4">
+        <h2 className="text-[15px] font-medium tracking-[-0.01em] text-ink">Nothing upcoming</h2>
+        <p className="mt-1 text-[13px] leading-5 text-muted">All saved dates are in the past. Add another course, or switch the calendar to past dates.</p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="panel overflow-hidden">
+      <div className="flex flex-col gap-1 border-b border-hairline px-5 py-3 sm:flex-row sm:items-baseline sm:justify-between">
+        <h2 className="text-[13px] font-medium text-ink">Next up</h2>
+        <p className="text-[12px] text-muted">
+          {dueThisWeek.length} due through Saturday
+          {examsSoon[0] ? ` · Next exam ${examsSoon[0].title} · ${formatLongDate(examsSoon[0].date)}` : ""}
+        </p>
+      </div>
+      <ol>
+        {next.map((event) => {
+          const time = formatTimeRange(event.time, event.endTime)
+          return (
+            <li key={event.id} className="flex flex-col gap-1 border-b border-hairline px-5 py-3 last:border-b-0 sm:flex-row sm:items-baseline sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-[13px] text-ink">{event.title}</p>
+                <p className="mt-0.5 text-[12px] text-muted">
+                  {event.courseName}
+                  {event.type ? ` · ${formatType(event.type)}` : ""}
+                  {time ? ` · ${time}` : ""}
+                </p>
+              </div>
+              <p className="shrink-0 text-[12px] text-muted">{formatLongDate(event.date)}</p>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
+  )
+}
+
+function formatType(type: string): string {
+  const lower = type.trim().toLowerCase()
+  return `${lower.charAt(0).toUpperCase()}${lower.slice(1)}`
 }
 
 function toCalendarItem(event: StoredEvent): CalendarItem {

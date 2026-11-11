@@ -44,7 +44,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="h-9 rounded-md px-3 text-[13px] text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            className="h-9 rounded-md px-3 text-[13px] text-muted hover:bg-well hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
           >
             Cancel
           </button>

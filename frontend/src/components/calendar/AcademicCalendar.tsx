@@ -42,7 +42,7 @@ export function AcademicCalendar({
 }) {
   const today = isoDate(new Date())
   const [view, setView] = useState<CalendarView>("month")
-  const [cursor, setCursor] = useState(() => firstDated(events) ?? parseIsoDate(today))
+  const [cursor, setCursor] = useState(() => parseIsoDate(today))
   const [course, setCourse] = useState("all")
   const [type, setType] = useState("all")
   const [when, setWhen] = useState<WhenFilter>("all")
@@ -80,22 +80,28 @@ export function AcademicCalendar({
   function showEvent(event: CalendarItem) {
     setSelectedId(event.id)
     setOpenDay(null)
+    window.requestAnimationFrame(() => {
+      document.getElementById("event-detail")?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    })
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="segmented" role="tablist" aria-label="Calendar view">
-          {(["month", "week", "agenda"] as const).map((option) => (
+          {([
+            ["month", "Month"],
+            ["week", "Week"],
+            ["agenda", "Agenda"],
+          ] as const).map(([option, label]) => (
             <button
               key={option}
               type="button"
               role="tab"
               aria-selected={view === option}
               onClick={() => setView(option)}
-              className="capitalize"
             >
-              {option}
+              {label}
             </button>
           ))}
         </div>
@@ -107,7 +113,7 @@ export function AcademicCalendar({
             <button
               type="button"
               onClick={() => setCursor(parseIsoDate(today))}
-              className="rounded-md border border-hairline px-3 py-1.5 text-[12px] text-ink hover:border-indigo-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+              className="rounded-md border border-hairline px-3 py-1.5 text-[12px] text-ink hover:border-indigo-line hover:bg-well active:bg-well focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
             >
               Today
             </button>
@@ -132,7 +138,7 @@ export function AcademicCalendar({
           <button
             type="button"
             onClick={clearFilters}
-            className="h-10 text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            className="h-10 rounded text-[12px] text-indigo hover:text-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
           >
             Clear filters
           </button>
@@ -162,13 +168,13 @@ export function AcademicCalendar({
             <AgendaView events={filtered} today={today} onShowEvent={showEvent} />
           )}
         </div>
-        <aside className="panel p-4">
+        <aside id="event-detail" className="panel p-4">
           {selected ? (
             <EventDetail event={selected} onEdit={() => onEdit(selected)} onDelete={() => onDelete(selected)} onClose={() => setSelectedId(null)} />
           ) : openDay ? (
             <DayList iso={openDay} events={dayEvents} onShowEvent={showEvent} onClose={() => setOpenDay(null)} />
           ) : (
-            <p className="text-[13px] leading-[1.6] text-muted">Select an event to see its course, date, weight, and source quote.</p>
+            <p className="text-[13px] leading-5 text-muted">Select an event for the course, time, weight, and syllabus quote. Use Week or Agenda when the month gets crowded.</p>
           )}
         </aside>
       </div>
@@ -363,7 +369,7 @@ function EventDetail({
     <div>
       <div className="flex items-start justify-between gap-3">
         <p className="text-[11px] font-medium text-muted">{event.courseName || "Course"}</p>
-        <button type="button" onClick={onClose} className="text-[12px] text-muted hover:text-ink">
+        <button type="button" onClick={onClose} className="rounded text-[12px] text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo">
           Close
         </button>
       </div>
@@ -416,7 +422,7 @@ function DayList({
     <div>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-[16px] text-ink">{formatLongDate(iso)}</h2>
-        <button type="button" onClick={onClose} className="text-[12px] text-muted hover:text-ink">
+        <button type="button" onClick={onClose} className="rounded text-[12px] text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo">
           Close
         </button>
       </div>

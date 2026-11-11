@@ -15,13 +15,14 @@ type EventEditorProps = {
   heading: string
   initial: EventFields
   notice?: string
+  saving?: boolean
   onCancel: () => void
   onSave: (fields: EventFields) => void
 }
 
 const KNOWN_TYPES = ["EXAM", "QUIZ", "ASSIGNMENT", "PROJECT", "ADMIN"]
 
-export function EventEditor({ heading, initial, notice, onCancel, onSave }: EventEditorProps) {
+export function EventEditor({ heading, initial, notice, saving = false, onCancel, onSave }: EventEditorProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const [title, setTitle] = useState(initial.title)
@@ -139,15 +140,16 @@ export function EventEditor({ heading, initial, notice, onCancel, onSave }: Even
           <button
             type="button"
             onClick={onCancel}
-            className="h-9 rounded-md px-3 text-[13px] text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            className="h-9 rounded-md px-3 text-[13px] text-muted hover:bg-well hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="h-9 rounded-md bg-indigo px-3.5 text-[13px] font-medium text-white hover:bg-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            disabled={saving}
+            className="h-9 rounded-md bg-indigo px-3.5 text-[13px] font-medium text-white hover:bg-indigo-deep active:bg-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo disabled:cursor-not-allowed disabled:bg-disabled disabled:text-disabled-ink"
           >
-            Save event
+            {saving ? "Saving…" : "Save event"}
           </button>
         </div>
       </form>

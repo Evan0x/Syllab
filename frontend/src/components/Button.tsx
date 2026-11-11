@@ -12,10 +12,10 @@ type ButtonProps = {
 }
 
 const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
-  primary: "bg-indigo text-white hover:bg-indigo-deep active:bg-indigo-deep",
-  secondary: "border border-hairline bg-surface text-ink hover:bg-well",
-  ghost: "bg-transparent text-indigo hover:bg-indigo-soft",
-  danger: "bg-error text-white hover:opacity-90",
+  primary: "bg-indigo text-white hover:bg-indigo-deep active:bg-indigo-deep active:scale-[0.98]",
+  secondary: "border border-hairline bg-surface text-ink hover:bg-well active:bg-well active:scale-[0.98]",
+  ghost: "bg-transparent text-indigo hover:bg-indigo-soft active:bg-indigo-soft",
+  danger: "bg-error text-white hover:opacity-90 active:opacity-90 active:scale-[0.98]",
 }
 
 export function Button({
@@ -33,7 +33,7 @@ export function Button({
       disabled={disabled}
       onClick={onClick}
       className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
-        disabled ? "cursor-progress border-transparent bg-disabled text-disabled-ink" : variants[variant]
+        disabled ? "cursor-not-allowed border-transparent bg-disabled text-disabled-ink" : variants[variant]
       }`}
     >
       {Icon ? (

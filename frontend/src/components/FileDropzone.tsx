@@ -113,6 +113,8 @@ export function FileDropzone({ file, problem, onFile }: FileDropzoneProps) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onDragEnter={onDragEnter}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
@@ -120,7 +122,14 @@ export function FileDropzone({ file, problem, onFile }: FileDropzoneProps) {
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       onClick={() => inputRef.current?.click()}
-      className={`flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border p-5 text-center lg:min-h-[200px] ${zoneClass}`}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          inputRef.current?.click()
+        }
+      }}
+      aria-label="Upload syllabus PDF"
+      className={`flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border p-5 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:min-h-[200px] ${zoneClass}`}
     >
       <input
         ref={inputRef}

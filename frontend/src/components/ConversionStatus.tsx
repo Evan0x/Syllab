@@ -101,7 +101,7 @@ export function ConversionStatus(props: ConversionStatusProps) {
               ? props.onReset
               : props.onRetry
         }
-        className="text-center text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+        className="text-center text-[12px] text-indigo hover:text-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo focus-visible:rounded-sm"
       >
         {props.phase === "loading"
           ? "Cancel conversion"
