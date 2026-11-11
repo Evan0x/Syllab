@@ -34,10 +34,27 @@ class DatabaseSchemaTest {
 				"select count(*) from flyway_schema_history where version = '1' and success",
 				Integer.class);
 		assertThat(applied).isEqualTo(1);
+		Integer verification = jdbc.queryForObject(
+				"select count(*) from flyway_schema_history where version = '2' and success",
+				Integer.class);
+		assertThat(verification).isEqualTo(1);
+		Integer oauth = jdbc.queryForObject(
+				"select count(*) from flyway_schema_history where version = '3' and success",
+				Integer.class);
+		assertThat(oauth).isEqualTo(1);
 		assertThat(jdbc.queryForList(
 				"select table_name from information_schema.tables where table_schema = 'public'",
 				String.class))
-				.contains("users", "courses", "syllabi", "events");
+				.contains("users", "courses", "syllabi", "events", "email_verification_codes");
+		assertThat(column("users", "password_hash", "is_nullable")).isEqualTo("YES");
+		assertThat(column("users", "email_verified", "is_nullable")).isEqualTo("NO");
+		assertThat(column("users", "email_verified", "column_default")).isEqualTo("false");
+		assertThat(jdbc.queryForObject(
+				"""
+				select attmissingval::text from pg_attribute
+				where attrelid = 'users'::regclass and attname = 'email_verified'
+				""",
+				String.class)).isEqualTo("{t}");
 	}
 
 	@Test
@@ -50,6 +67,8 @@ class DatabaseSchemaTest {
 				"Thursday, October 15");
 
 		assertThat(count("users", userId)).isEqualTo(1);
+		assertThat(jdbc.queryForObject("select email_verified from users where id = ?", Boolean.class, userId))
+				.isFalse();
 		assertThat(count("courses", userId)).isEqualTo(1);
 		assertThat(count("syllabi", userId)).isEqualTo(1);
 		assertThat(jdbc.queryForObject("select title from events where id = ?", String.class, eventId))
@@ -170,6 +189,14 @@ class DatabaseSchemaTest {
 				.isEqualTo(1);
 		assertThat(jdbc.queryForObject("select syllabus_id from events where id = ?", UUID.class, eventId))
 				.isNull();
+	}
+
+	private String column(String table, String column, String field) {
+		return jdbc.queryForObject(
+				"select " + field + " from information_schema.columns where table_schema = 'public' and table_name = ? and column_name = ?",
+				String.class,
+				table,
+				column);
 	}
 
 	private UUID insertUser(String email) {

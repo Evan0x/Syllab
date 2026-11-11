@@ -1,5 +1,6 @@
 package io.github.evan0x.syllacal.web;
 
+import com.jayway.jsonpath.JsonPath;
 import io.github.evan0x.syllacal.PostgresTestcontainersConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,8 @@ class SessionCookieTest {
 				request("POST", "/api/auth/register", csrf, registerJson(email)),
 				bodyHandler());
 		assertThat(registered.statusCode()).isEqualTo(201);
+		assertThat(registered.headers().allValues("set-cookie").stream().noneMatch(header -> header.startsWith("JSESSIONID="))).isTrue();
+		verify(client, csrf, email, registered.body());
 
 		HttpResponse<String> loggedIn = client.send(
 				request("POST", "/api/auth/login", csrf, loginJson(email)),
@@ -71,6 +74,7 @@ class SessionCookieTest {
 				sameOrigin("POST", "/api/auth/register", csrf, null, registerJson(email)),
 				bodyHandler());
 		assertThat(registered.statusCode()).isEqualTo(201);
+		verify(client, csrf, email, registered.body());
 
 		HttpResponse<String> loggedIn = client.send(
 				sameOrigin("POST", "/api/auth/login", csrf, null, loginJson(email)),
@@ -147,8 +151,20 @@ class SessionCookieTest {
 				.orElseThrow();
 	}
 
+	private void verify(HttpClient client, String csrf, String email, String registrationBody) throws Exception {
+		String code = JsonPath.read(registrationBody, "$.verificationCode");
+		HttpResponse<String> verified = client.send(
+				request("POST", "/api/auth/verify-email", csrf, verifyJson(email, code)),
+				bodyHandler());
+		assertThat(verified.statusCode()).isEqualTo(204);
+	}
+
 	private static String registerJson(String email) {
-		return "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\",\"inviteCode\":\"test-invite-code\"}";
+		return "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}";
+	}
+
+	private static String verifyJson(String email, String code) {
+		return "{\"email\":\"" + email + "\",\"code\":\"" + code + "\"}";
 	}
 
 	private static String loginJson(String email) {

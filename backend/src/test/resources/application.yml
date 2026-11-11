@@ -11,9 +11,20 @@ spring:
     url: jdbc:postgresql://127.0.0.1:1/unused
     username: unused
     password: unused
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google-client
+            client-secret: test-google-secret
+          github:
+            client-id: test-github-client
+            client-secret: test-github-secret
 
 syllacal:
   invite-code: test-invite-code
+  return-verification-code: true
 
 gemini:
   model: gemini-3.5-flash-lite

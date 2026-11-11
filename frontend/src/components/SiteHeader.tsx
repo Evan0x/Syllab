@@ -1,4 +1,5 @@
-import { ArrowUpRight, CalendarCheck2 } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
+import { BrandLockup } from "./login/BrandLockup.tsx"
 
 type SiteHeaderProps = {
   onHome?: () => void
@@ -9,14 +10,7 @@ type SiteHeaderProps = {
 export function SiteHeader({ onHome, email, onLogout }: SiteHeaderProps) {
   const logoClass =
     "flex items-center gap-[9px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-  const logo = (
-    <>
-      <span className="flex size-[29px] items-center justify-center rounded-[7px] bg-indigo text-white">
-        <CalendarCheck2 size={18} strokeWidth={1.75} aria-hidden />
-      </span>
-      <span className="text-[20px] tracking-[-0.7px] text-ink">Syllapin</span>
-    </>
-  )
+  const logo = <BrandLockup />
 
   return (
     <header className="flex h-[76px] items-center justify-between border-b border-hairline px-6 lg:h-[88px] lg:px-10 xl:px-20">

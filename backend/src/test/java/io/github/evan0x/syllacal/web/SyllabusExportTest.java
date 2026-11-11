@@ -5,6 +5,7 @@ import io.github.evan0x.syllacal.calendar.IcsBuilder;
 import io.github.evan0x.syllacal.pdf.PdfTextExtractor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -23,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(SyllabusController.class)
+@WebMvcTest(controllers = SyllabusController.class, excludeAutoConfiguration = OAuth2ClientWebSecurityAutoConfiguration.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import({
 		PdfTextExtractor.class,

@@ -5,12 +5,14 @@ import io.github.evan0x.syllacal.PostgresTestcontainersConfiguration;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -32,7 +34,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(PostgresTestcontainersConfiguration.class)
 class AuthAccessTest {
 
-	private static final String INVITE = "test-invite-code";
 	private static final String PASSWORD = "password12";
 
 	@Autowired
@@ -40,6 +41,9 @@ class AuthAccessTest {
 
 	@Autowired
 	private JdbcTemplate jdbc;
+
+	@Autowired
+	private ObjectProvider<JavaMailSender> mailSenders;
 
 	private Cookie csrfCookie;
 
@@ -55,7 +59,7 @@ class AuthAccessTest {
 
 	@Test
 	void loginPageLoadsWithoutAuthenticationAndSetsTheCsrfCookie() throws Exception {
-		for (String path : new String[] { "/", "/index.html", "/favicon.svg", "/assets/app.js" }) {
+		for (String path : new String[] { "/", "/index.html", "/favicon.svg", "/assets/app.js", "/terms", "/privacy" }) {
 			MvcResult result = mockMvc.perform(get(path)).andReturn();
 			assertThat(result.getResponse().getStatus()).isNotEqualTo(401);
 			Cookie csrf = result.getResponse().getCookie("XSRF-TOKEN");
@@ -86,29 +90,78 @@ class AuthAccessTest {
 	}
 
 	@Test
-	void registrationRejectsAMissingOrWrongInviteCode() throws Exception {
-		String missing = send(post("/api/auth/register"),
-				registerJson("one-" + UUID.randomUUID() + "@school.edu", PASSWORD, null), null, ip())
+	void registrationCreatesAnUnverifiedAccountWithoutCheckingAnInviteCode() throws Exception {
+		String email = "new-" + UUID.randomUUID() + "@school.edu";
+		MvcResult created = send(post("/api/auth/register"),
+				"{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\",\"inviteCode\":\"not-checked\"}",
+				null, ip())
+				.andExpect(status().isCreated())
+				.andReturn();
+		String body = created.getResponse().getContentAsString();
+		String code = JsonPath.read(body, "$.verificationCode");
+		String hash = jdbc.queryForObject(
+				"select code_hash from email_verification_codes where user_id = (select id from users where email = ?)",
+				String.class,
+				email);
+		Boolean verified = jdbc.queryForObject("select email_verified from users where email = ?", Boolean.class, email);
+		assertThat(created.getRequest().getSession(false)).isNull();
+		assertThat(mailSenders.getIfAvailable()).isNull();
+		assertThat(body).contains(code).doesNotContain(hash).doesNotContain("not-checked");
+		assertThat(hash).isNotEqualTo(code);
+		assertThat(verified).isFalse();
+		send(post("/api/auth/login"), loginJson(email, PASSWORD), null, ip())
+				.andExpect(status().isForbidden())
+				.andExpect(result -> assertThat(result.getResponse().getContentAsString())
+						.isEqualTo("{\"message\":\"Verify your email before signing in.\"}")
+						.doesNotContain(code));
+	}
+
+	@Test
+	void verifyEmailAcceptsAMatchingCodeOnce() throws Exception {
+		String email = "verify-" + UUID.randomUUID() + "@school.edu";
+		String code = codeFor(email);
+		send(post("/api/auth/verify-email"), verifyJson(email, code), null, ip())
+				.andExpect(status().isNoContent());
+		Boolean verified = jdbc.queryForObject("select email_verified from users where email = ?", Boolean.class, email);
+		assertThat(verified).isTrue();
+		assertThat(jdbc.queryForObject(
+				"select used_at is not null from email_verification_codes where user_id = (select id from users where email = ?)",
+				Boolean.class,
+				email)).isTrue();
+		send(post("/api/auth/verify-email"), verifyJson(email, code), null, ip())
+				.andExpect(status().isBadRequest());
+		login(email);
+	}
+
+	@Test
+	void wrongExpiredAndReusedCodesAreRejected() throws Exception {
+		String email = "reject-" + UUID.randomUUID() + "@school.edu";
+		String code = codeFor(email);
+		send(post("/api/auth/verify-email"), verifyJson(email, "00000000000000000000000000000000"), null, ip())
 				.andExpect(status().isBadRequest())
-				.andReturn()
-				.getResponse()
-				.getContentAsString();
-		String wrong = send(post("/api/auth/register"),
-				registerJson("two-" + UUID.randomUUID() + "@school.edu", PASSWORD, "wrong-invite-code"), null, ip())
-				.andExpect(status().isBadRequest())
-				.andReturn()
-				.getResponse()
-				.getContentAsString();
-		assertThat(missing).contains("Registration is closed");
-		assertThat(wrong).contains("Registration is closed");
-		assertThat(wrong).doesNotContain("wrong-invite-code").doesNotContain(INVITE);
+				.andExpect(result -> assertThat(result.getResponse().getContentAsString())
+						.isEqualTo("{\"message\":\"That code is not valid.\"}"));
+		assertThat(jdbc.queryForObject("select email_verified from users where email = ?", Boolean.class, email)).isFalse();
+
+		jdbc.update(
+				"update email_verification_codes set expires_at = now() - interval '1 minute' where user_id = (select id from users where email = ?)",
+				email);
+		send(post("/api/auth/verify-email"), verifyJson(email, code), null, ip())
+				.andExpect(status().isBadRequest());
+
+		jdbc.update(
+				"update email_verification_codes set expires_at = now() + interval '10 minutes', used_at = now() where user_id = (select id from users where email = ?)",
+				email);
+		send(post("/api/auth/verify-email"), verifyJson(email, code), null, ip())
+				.andExpect(status().isBadRequest());
+		assertThat(jdbc.queryForObject("select email_verified from users where email = ?", Boolean.class, email)).isFalse();
 	}
 
 	@Test
 	void duplicateEmailInAnotherCaseIsRejectedWithAGenericMessage() throws Exception {
 		String local = UUID.randomUUID().toString();
 		MvcResult created = send(post("/api/auth/register"),
-				registerJson("  " + local + "@School.edu  ", PASSWORD, INVITE), null, ip())
+				registerJson("  " + local + "@School.edu  ", PASSWORD), null, ip())
 				.andExpect(status().isCreated())
 				.andReturn();
 		String body = created.getResponse().getContentAsString();
@@ -117,7 +170,7 @@ class AuthAccessTest {
 		assertThat(stored).isEqualTo(local + "@school.edu");
 		assertThat(body).doesNotContain(hash);
 		String duplicate = send(post("/api/auth/register"),
-				registerJson(local + "@school.edu", PASSWORD, INVITE), null, ip())
+				registerJson(local + "@school.edu", PASSWORD), null, ip())
 				.andExpect(status().isBadRequest())
 				.andReturn()
 				.getResponse()
@@ -129,7 +182,7 @@ class AuthAccessTest {
 	@Test
 	void wrongPasswordAndUnknownEmailLookTheSame() throws Exception {
 		String email = "known-" + UUID.randomUUID() + "@school.edu";
-		send(post("/api/auth/register"), registerJson(email, PASSWORD, INVITE), null, ip())
+		send(post("/api/auth/register"), registerJson(email, PASSWORD), null, ip())
 				.andExpect(status().isCreated());
 		MvcResult unknown = send(post("/api/auth/login"),
 				loginJson("missing-" + UUID.randomUUID() + "@school.edu", PASSWORD), null, ip())
@@ -193,10 +246,17 @@ class AuthAccessTest {
 	}
 
 	private UUID register(String email) throws Exception {
-		MvcResult result = send(post("/api/auth/register"), registerJson(email, PASSWORD, INVITE), null, ip())
+		String code = codeFor(email);
+		send(post("/api/auth/verify-email"), verifyJson(email, code), null, ip())
+				.andExpect(status().isNoContent());
+		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
+	}
+
+	private String codeFor(String email) throws Exception {
+		MvcResult result = send(post("/api/auth/register"), registerJson(email, PASSWORD), null, ip())
 				.andExpect(status().isCreated())
 				.andReturn();
-		return UUID.fromString(JsonPath.read(result.getResponse().getContentAsString(), "$.id"));
+		return JsonPath.read(result.getResponse().getContentAsString(), "$.verificationCode");
 	}
 
 	private SignedIn login(String email) throws Exception {
@@ -262,8 +322,12 @@ class AuthAccessTest {
 		return "10." + (first % 250) + "." + (second % 250) + "." + (third % 250);
 	}
 
-	private static String registerJson(String email, String password, String inviteCode) {
-		return "{\"email\":" + json(email) + ",\"password\":" + json(password) + ",\"inviteCode\":" + json(inviteCode) + "}";
+	private static String registerJson(String email, String password) {
+		return "{\"email\":" + json(email) + ",\"password\":" + json(password) + "}";
+	}
+
+	private static String verifyJson(String email, String code) {
+		return "{\"email\":" + json(email) + ",\"code\":" + json(code) + "}";
 	}
 
 	private static String loginJson(String email, String password) {

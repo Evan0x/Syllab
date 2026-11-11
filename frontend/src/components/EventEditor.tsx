@@ -103,7 +103,7 @@ export function EventEditor({ heading, initial, onCancel, onSave }: EventEditorP
           <select
             value={type}
             onChange={(event) => setType(event.target.value)}
-            className="h-12 rounded-lg border border-hairline bg-white px-[13px] text-[14px] text-ink outline-none focus:border-indigo"
+            className="h-12 rounded-lg border border-hairline bg-surface px-[13px] text-[14px] text-ink outline-none focus:border-indigo"
           >
             <option value="">Not specified</option>
             {typeOptions.map((option) => (
@@ -120,7 +120,7 @@ export function EventEditor({ heading, initial, onCancel, onSave }: EventEditorP
             required
             value={date}
             onChange={(event) => setDate(event.target.value)}
-            className="h-12 rounded-lg border border-hairline bg-white px-[13px] text-[14px] text-ink outline-none focus:border-indigo"
+            className="h-12 rounded-lg border border-hairline bg-surface px-[13px] text-[14px] text-ink outline-none focus:border-indigo"
           />
         </label>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -174,7 +174,7 @@ function Field({
         placeholder={placeholder}
         autoComplete="off"
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 rounded-lg border border-hairline bg-white px-[13px] text-[14px] text-ink outline-none placeholder:text-placeholder focus:border-indigo"
+        className="h-12 rounded-lg border border-hairline bg-surface px-[13px] text-[14px] text-ink outline-none placeholder:text-placeholder focus:border-indigo"
       />
     </label>
   )
@@ -196,7 +196,7 @@ function TimeField({
         type="time"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 rounded-lg border border-hairline bg-white px-[13px] text-[14px] text-ink outline-none focus:border-indigo"
+        className="h-12 rounded-lg border border-hairline bg-surface px-[13px] text-[14px] text-ink outline-none focus:border-indigo"
       />
     </label>
   )

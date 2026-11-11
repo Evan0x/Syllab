@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react"
 import { currentAccount, logoutAccount, type Account } from "./api/auth.ts"
 import type { PreviewResponse } from "./api/syllabus.ts"
+import { privacyDocument, termsDocument } from "./content/legal.ts"
 import { AuthPage } from "./pages/AuthPage.tsx"
 import { LandingPage } from "./pages/LandingPage.tsx"
+import { LegalDocumentPage } from "./pages/LegalDocumentPage.tsx"
 import { ReviewCalendarPage } from "./pages/ReviewCalendarPage.tsx"
 
 type ReviewTerm = {
@@ -10,7 +12,19 @@ type ReviewTerm = {
   termEnd: string
 }
 
+function legalDocument() {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/"
+  if (path === "/terms") {
+    return termsDocument
+  }
+  if (path === "/privacy") {
+    return privacyDocument
+  }
+  return null
+}
+
 export default function App() {
+  const legal = legalDocument()
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const [preview, setPreview] = useState<PreviewResponse | null>(null)
   const [term, setTerm] = useState<ReviewTerm | null>(null)
@@ -44,6 +58,10 @@ export default function App() {
     setTerm(null)
     setReviewing(false)
     setAccount(null)
+  }
+
+  if (legal) {
+    return <LegalDocumentPage document={legal} />
   }
 
   if (account === undefined) {

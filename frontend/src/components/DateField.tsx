@@ -15,7 +15,7 @@ export function DateField({ id, label, value, invalid = false, onChange }: DateF
         {label}
       </label>
       <div
-        className={`flex h-12 items-center rounded-lg border bg-white pr-2.5 focus-within:border-indigo lg:pr-[13px] ${
+        className={`flex h-12 items-center rounded-lg border bg-surface pr-2.5 focus-within:border-indigo lg:pr-[13px] ${
           invalid ? "border-error" : "border-hairline"
         }`}
       >

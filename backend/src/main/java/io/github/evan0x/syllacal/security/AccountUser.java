@@ -13,11 +13,13 @@ public final class AccountUser implements UserDetails {
 	private final UUID id;
 	private final String email;
 	private final String passwordHash;
+	private final boolean emailVerified;
 
-	public AccountUser(UUID id, String email, String passwordHash) {
+	public AccountUser(UUID id, String email, String passwordHash, boolean emailVerified) {
 		this.id = id;
 		this.email = email;
 		this.passwordHash = passwordHash;
+		this.emailVerified = emailVerified;
 	}
 
 	public UUID id() {
@@ -28,8 +30,12 @@ public final class AccountUser implements UserDetails {
 		return email;
 	}
 
+	public boolean emailVerified() {
+		return emailVerified;
+	}
+
 	public AccountUser withoutSecret() {
-		return new AccountUser(id, email, null);
+		return new AccountUser(id, email, null, emailVerified);
 	}
 
 	@Override

@@ -18,7 +18,8 @@ public class AccountUserDetailsService implements UserDetailsService {
 	public UserDetails loadUserByUsername(String username) {
 		String email = Emails.normalize(username);
 		return accounts.findByEmail(email)
-				.map(account -> new AccountUser(account.id(), account.email(), account.passwordHash()))
+				.map(account -> new AccountUser(
+						account.id(), account.email(), account.passwordHash(), account.emailVerified()))
 				.orElseThrow(() -> new UsernameNotFoundException("No account"));
 	}
 }

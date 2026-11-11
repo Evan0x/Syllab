@@ -35,7 +35,7 @@ export function TextField({
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}
-        className={`h-12 w-full rounded-lg border bg-white px-[13px] text-[14px] text-ink outline-none placeholder:text-placeholder focus:border-indigo ${
+        className={`h-12 w-full rounded-lg border bg-surface px-[13px] text-[14px] text-ink outline-none placeholder:text-placeholder focus:border-indigo ${
           error ? "border-error" : "border-hairline"
         }`}
       />

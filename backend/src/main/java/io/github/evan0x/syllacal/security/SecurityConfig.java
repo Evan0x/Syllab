@@ -22,6 +22,8 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(
 			HttpSecurity http,
+			GitHubVerifiedEmailUserService gitHubUsers,
+			OauthLoginHandler oauthLogin,
 			@Value("${server.servlet.session.cookie.secure:true}") boolean secureCookies) throws Exception {
 		CookieCsrfTokenRepository tokens = CookieCsrfTokenRepository.withHttpOnlyFalse();
 		tokens.setCookieCustomizer(cookie -> cookie.sameSite("Lax").secure(secureCookies));
@@ -30,6 +32,10 @@ public class SecurityConfig {
 				.httpBasic(AbstractHttpConfigurer::disable)
 				.formLogin(AbstractHttpConfigurer::disable)
 				.logout(AbstractHttpConfigurer::disable)
+				.oauth2Login(oauth -> oauth
+						.userInfoEndpoint(userInfo -> userInfo.userService(gitHubUsers))
+						.successHandler(oauthLogin)
+						.failureHandler(oauthLogin))
 				.exceptionHandling(errors -> errors
 						.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
 						.accessDeniedHandler((request, response, denied) -> {
@@ -39,9 +45,16 @@ public class SecurityConfig {
 						}))
 				.authorizeHttpRequests(auth -> auth
 						.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-						.requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.svg", "/favicon.ico", "/assets/**")
+						.requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.svg", "/favicon.ico", "/assets/**", "/terms", "/privacy")
 						.permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+						.requestMatchers(HttpMethod.GET,
+								"/oauth2/authorization/google",
+								"/oauth2/authorization/github",
+								"/login/oauth2/code/google",
+								"/login/oauth2/code/github")
+						.permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/verify-email")
+						.permitAll()
 						.anyRequest().authenticated());
 		return http.build();
 	}

@@ -86,3 +86,107 @@ input {
 .review-dialog::backdrop {
   background: rgba(37, 38, 43, 0.32);
 }
+
+.auth-screen {
+  --auth-page: #ffffff;
+  --auth-panel: #f5f5fc;
+  --auth-ink: #181c32;
+  --auth-muted: #626778;
+  --auth-faint: #74798a;
+  --auth-indigo: #5046d8;
+  --auth-indigo-deep: #433bc4;
+  --auth-line: #dfe2ea;
+  --auth-card-line: #e2e4ed;
+  --auth-surface: #ffffff;
+  --auth-well: #f8f9fc;
+  --auth-selected: #eeedfc;
+  --auth-badge: #f0effc;
+  --auth-bar: #a3a8bb;
+  --auth-check: #bec3cf;
+  --auth-error: #b4433e;
+  --auth-shadow: 0 12px 30px -8px rgba(36, 39, 75, 0.06);
+  background: var(--auth-page);
+  color: var(--auth-ink);
+  color-scheme: light;
+}
+
+.brand-lockup img {
+  display: block;
+  height: 64px;
+  width: auto;
+  max-width: none;
+  flex-shrink: 0;
+}
+
+.brand-lockup-large img {
+  height: 80px;
+}
+
+.brand-lockup .logo-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .auth-screen {
+    --auth-page: #0b163a;
+    --auth-panel: #0b163a;
+    --auth-ink: #f4f6fb;
+    --auth-muted: #b7bdd0;
+    --auth-faint: #8e95ab;
+    --auth-indigo: #6a62ef;
+    --auth-indigo-deep: #7b74f4;
+    --auth-line: #2c3a66;
+    --auth-card-line: #2c3a66;
+    --auth-surface: #121c44;
+    --auth-well: #152044;
+    --auth-selected: #24306a;
+    --auth-badge: #24306a;
+    --auth-bar: #8e95ab;
+    --auth-check: #5c6a92;
+    --auth-error: #f0a8a4;
+    --auth-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+
+  .brand-lockup .logo-light {
+    display: none;
+  }
+
+  .brand-lockup .logo-dark {
+    display: flex;
+  }
+
+  :root {
+    --color-canvas: #0b163a;
+    --color-surface: #121c44;
+    --color-ink: #f4f6fb;
+    --color-muted: #b7bdd0;
+    --color-placeholder: #8e95ab;
+    --color-hairline: #2c3a66;
+    --color-indigo: #7b74f4;
+    --color-indigo-deep: #918bff;
+    --color-indigo-soft: #24306a;
+    --color-indigo-line: #5c56b8;
+    --color-well: #152044;
+    --color-drop: #121c44;
+    --color-error: #f0a8a4;
+    --color-error-soft: #3a2428;
+    --color-success: #8dceb0;
+    --color-success-soft: #163328;
+    --color-disabled: #243052;
+    --color-disabled-ink: #8e95ab;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  .date-input {
+    color-scheme: dark;
+  }
+
+  .review-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.55);
+  }
+}

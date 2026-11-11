@@ -97,14 +97,14 @@ export function FileDropzone({ file, problem, onFile }: FileDropzoneProps) {
     mode === "ready"
       ? "bg-success-soft text-success"
       : mode === "hover" || mode === "drag"
-        ? "bg-white text-indigo"
+        ? "bg-surface text-indigo"
         : mode === "invalid"
           ? "bg-well text-error"
           : "bg-well text-[#7c7ab8]"
 
   const zoneClass =
     mode === "ready"
-      ? "border-solid border-hairline bg-white"
+      ? "border-solid border-hairline bg-surface"
       : mode === "invalid"
         ? "border-dashed border-error bg-error-soft"
         : mode === "hover" || mode === "drag"
@@ -153,7 +153,7 @@ export function FileDropzone({ file, problem, onFile }: FileDropzoneProps) {
       </span>
       <button
         type="button"
-        className={`inline-flex items-center gap-[7px] rounded-md border bg-white px-[14px] py-2 text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
+        className={`inline-flex items-center gap-[7px] rounded-md border bg-surface px-[14px] py-2 text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
           mode === "hover" || mode === "drag" ? "border-indigo-line" : "border-hairline"
         }`}
       >

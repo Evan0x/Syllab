@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -22,26 +23,35 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(PostgresTestcontainersConfiguration.class)
-@TestPropertySource(properties = "syllacal.invite-code=")
-class RegistrationClosedTest {
+@TestPropertySource(properties = "syllacal.return-verification-code=false")
+class VerificationCodeHiddenTest {
 
 	@Autowired
 	private MockMvc mockMvc;
 
+	@Autowired
+	private JdbcTemplate jdbc;
+
 	@Test
-	void registrationIsClosedWhenNoInviteCodeIsConfigured() throws Exception {
+	void registrationDoesNotReturnTheVerificationCode() throws Exception {
 		MvcResult csrf = mockMvc.perform(get("/api/me")).andReturn();
 		Cookie cookie = csrf.getResponse().getCookie("XSRF-TOKEN");
 		assertThat(cookie).isNotNull();
-		String email = "closed-" + UUID.randomUUID() + "@school.edu";
-		mockMvc.perform(post("/api/auth/register")
+		String email = "hidden-" + UUID.randomUUID() + "@school.edu";
+		String body = mockMvc.perform(post("/api/auth/register")
 						.contentType(MediaType.APPLICATION_JSON)
 						.cookie(cookie)
 						.header("X-XSRF-TOKEN", cookie.getValue())
-						.content("{\"email\":\"" + email + "\",\"password\":\"password12\",\"inviteCode\":\"test-invite-code\"}"))
-				.andExpect(status().isBadRequest())
-				.andExpect(result -> assertThat(result.getResponse().getContentAsString())
-						.contains("Registration is closed")
-						.doesNotContain("test-invite-code"));
+						.content("{\"email\":\"" + email + "\",\"password\":\"password12\"}"))
+				.andExpect(status().isCreated())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+		String hash = jdbc.queryForObject(
+				"select code_hash from email_verification_codes where user_id = (select id from users where email = ?)",
+				String.class,
+				email);
+		assertThat(body).doesNotContain("verificationCode").doesNotContain(hash);
+		assertThat(hash).hasSize(64);
 	}
 }

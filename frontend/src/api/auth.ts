@@ -26,11 +26,7 @@ export async function currentAccount(): Promise<Account | null> {
   return readAccount(response)
 }
 
-export async function registerAccount(input: {
-  email: string
-  password: string
-  inviteCode: string
-}): Promise<Account> {
+export async function registerAccount(input: { email: string; password: string }): Promise<Account> {
   const response = await apiFetch("/api/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -40,6 +36,17 @@ export async function registerAccount(input: {
     throw new AuthError(await readMessage(response, "Could not create an account"), response.status)
   }
   return readAccount(response)
+}
+
+export async function verifyEmail(input: { email: string; code: string }): Promise<void> {
+  const response = await apiFetch("/api/auth/verify-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })
+  if (!response.ok) {
+    throw new AuthError(await readMessage(response, "That code is not valid."), response.status)
+  }
 }
 
 export async function loginAccount(input: { email: string; password: string }): Promise<Account> {
