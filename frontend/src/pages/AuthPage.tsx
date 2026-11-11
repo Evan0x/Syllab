@@ -1,8 +1,9 @@
-import { ArrowRight, LockKeyhole } from "lucide-react"
 import { useState } from "react"
 import type { FormEvent } from "react"
 import { AuthError, loginAccount, registerAccount, verifyEmail, type Account } from "../api/auth.ts"
 import { csrfToken } from "../api/http.ts"
+import arrow from "../assets/login/arrow.svg"
+import lock from "../assets/login/lock.svg"
 import { AuthField } from "../components/login/AuthField.tsx"
 import { BrandLockup } from "../components/login/BrandLockup.tsx"
 import { SemesterPreview } from "../components/login/SemesterPreview.tsx"
@@ -98,49 +99,33 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
   const label = submitting
     ? "Please wait"
     : mode === "login"
-      ? "Sign in"
+      ? "Sign In"
       : mode === "register"
         ? "Create account"
         : "Verify email"
 
   return (
-    <div className="auth-screen flex min-h-screen flex-col min-[1100px]:flex-row">
-      <aside className="hidden min-h-screen w-[640px] shrink-0 flex-col justify-between bg-[var(--auth-panel)] px-14 pt-12 pb-10 min-[1100px]:flex">
-        <BrandLockup size="large" />
+    <div className="auth-screen flex min-h-screen w-full max-w-full flex-col overflow-x-clip min-[1100px]:flex-row">
+      <aside className="hidden min-h-screen shrink-0 flex-col justify-between bg-[var(--auth-panel)] px-14 pt-12 pb-10 min-[1100px]:flex min-[1100px]:w-[640px]">
+        <BrandLockup size="mark" />
         <SemesterPreview />
-        <p className="text-[10px] leading-4 font-medium tracking-[0.4px] text-[var(--auth-muted)]">
+        <p className="text-[10px] leading-4 font-medium text-[var(--auth-muted)]">
           LESS ORGANIZING. MORE LEARNING.
         </p>
       </aside>
-      <div className="flex min-h-screen flex-1 flex-col px-6 pt-10 pb-7 min-[1100px]:px-16 min-[1100px]:pt-12 min-[1100px]:pb-10">
+      <div className="flex min-h-screen w-full min-w-0 flex-1 flex-col gap-8 px-6 pt-10 pb-7 min-[1100px]:px-16 min-[1100px]:pt-12 min-[1100px]:pb-10">
         <p className="hidden text-right text-[12px] leading-5 text-[var(--auth-faint)] min-[1100px]:block">
           Your next chapter starts here.
         </p>
         <div className="min-[1100px]:hidden">
-          <BrandLockup size="large" />
+          <BrandLockup size="mark" />
         </div>
-        <div className="flex flex-1 items-center py-8">
-          <div className="mx-auto flex w-full max-w-[400px] flex-col gap-7">
+        <div className="flex flex-1 items-center">
+          <div className="mx-auto flex w-full min-w-0 max-w-[400px] flex-col gap-7">
             <div className="flex flex-col gap-2.5">
               <h1 className="text-[32px] leading-10 font-semibold tracking-[-1px]">{heading}</h1>
               <p className="text-[14px] leading-[22px] text-[var(--auth-muted)]">{description}</p>
             </div>
-            {mode === "login" ? (
-              <div className="flex flex-col gap-3">
-                <a
-                  href="/oauth2/authorization/google"
-                  className="flex h-12 items-center justify-center rounded-[10px] border border-[var(--auth-line)] bg-[var(--auth-surface)] text-[14px] text-[var(--auth-ink)] hover:border-[var(--auth-indigo)]"
-                >
-                  Continue with Google
-                </a>
-                <a
-                  href="/oauth2/authorization/github"
-                  className="flex h-12 items-center justify-center rounded-[10px] border border-[var(--auth-line)] bg-[var(--auth-surface)] text-[14px] text-[var(--auth-ink)] hover:border-[var(--auth-indigo)]"
-                >
-                  Continue with GitHub
-                </a>
-              </div>
-            ) : null}
             <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
               {mode === "verify" ? (
                 <AuthField
@@ -174,13 +159,13 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
                 </>
               )}
               {mode === "login" ? (
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex w-full min-w-0 items-center justify-between gap-3">
                   <label className="flex items-center gap-2 text-[13px] leading-5 text-[var(--auth-muted)]">
                     <input
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(event) => setRememberMe(event.target.checked)}
-                      className="size-4 rounded-[4px] border border-[var(--auth-check)] accent-[var(--auth-indigo)]"
+                      className="auth-check"
                     />
                     Remember me
                   </label>
@@ -203,7 +188,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
                 className="flex h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--auth-indigo)] px-5 text-[14px] leading-[22px] font-semibold text-white hover:bg-[var(--auth-indigo-deep)] disabled:cursor-progress disabled:opacity-70"
               >
                 {label}
-                {mode === "login" && !submitting ? <ArrowRight size={18} strokeWidth={1.75} aria-hidden /> : null}
+                {mode === "login" && !submitting ? <img src={arrow} alt="" width="18" height="18" /> : null}
               </button>
             </form>
             {mode === "login" ? (
@@ -230,11 +215,27 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
               </button>
             )}
             <p className="flex items-center justify-center gap-1.5 text-[12px] leading-[18px] text-[var(--auth-faint)]">
-              <LockKeyhole size={14} strokeWidth={1.75} aria-hidden />
+              <img src={lock} alt="" width="14" height="14" />
               Your plans stay yours.
             </p>
           </div>
         </div>
+        {mode === "login" ? (
+          <div className="mx-auto flex w-full max-w-[400px] flex-col gap-3">
+            <a
+              href="/oauth2/authorization/google"
+              className="flex h-12 items-center justify-center rounded-[10px] border border-[var(--auth-line)] bg-[var(--auth-surface)] text-[14px] text-[var(--auth-ink)] hover:border-[var(--auth-indigo)]"
+            >
+              Continue with Google
+            </a>
+            <a
+              href="/oauth2/authorization/github"
+              className="flex h-12 items-center justify-center rounded-[10px] border border-[var(--auth-line)] bg-[var(--auth-surface)] text-[14px] text-[var(--auth-ink)] hover:border-[var(--auth-indigo)]"
+            >
+              Continue with GitHub
+            </a>
+          </div>
+        ) : null}
         <footer className="flex flex-col items-center gap-2.5 text-[12px] leading-5 min-[1100px]:flex-row min-[1100px]:justify-between">
           <p className="order-2 text-[11px] leading-[18px] text-[var(--auth-faint)] min-[1100px]:order-1">© 2026 Syllapin</p>
           <p className="order-1 flex gap-6 font-medium min-[1100px]:order-2 min-[1100px]:gap-5 min-[1100px]:text-[11px]">

@@ -1,4 +1,5 @@
-import { Check, Sparkles } from "lucide-react"
+import check from "../../assets/login/check.svg"
+import sparkles from "../../assets/login/sparkles.svg"
 
 const days = [
   { label: "M", date: "16", selected: false },
@@ -18,7 +19,7 @@ export function SemesterPreview() {
     <div className="flex w-full max-w-[528px] flex-col gap-9">
       <div className="flex flex-col gap-[18px]">
         <p className="flex items-center gap-[7px] text-[10px] font-semibold tracking-[1.2px] text-[var(--auth-indigo)]">
-          <Sparkles size={16} strokeWidth={1.75} aria-hidden />
+          <img src={sparkles} alt="" width="16" height="16" />
           A LITTLE CLARITY GOES A LONG WAY
         </p>
         <h2 className="text-[46px] leading-[54px] font-semibold tracking-[-1.8px]">
@@ -80,7 +81,7 @@ export function SemesterPreview() {
         </div>
       </div>
       <p className="flex items-center gap-2 text-[12px] leading-5 text-[var(--auth-muted)]">
-        <Check size={16} strokeWidth={1.75} aria-hidden />
+        <img src={check} alt="" width="16" height="16" />
         From syllabus to schedule, without the busywork.
       </p>
     </div>

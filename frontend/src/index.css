@@ -126,6 +126,64 @@ input {
   display: none;
 }
 
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  height: 32px;
+}
+
+.brand-mark img {
+  display: block;
+  width: 27.8621px;
+  height: 32px;
+  max-width: none;
+  flex-shrink: 0;
+}
+
+.brand-mark-name {
+  color: var(--auth-ink);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+.brand-mark img.brand-mark-dark {
+  display: none;
+}
+
+.auth-check {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1px solid var(--auth-check);
+  border-radius: 4px;
+  background: var(--auth-surface);
+  display: grid;
+  place-content: center;
+}
+
+.auth-check:checked {
+  border-color: var(--auth-indigo);
+  background: var(--auth-indigo);
+}
+
+.auth-check:checked::after {
+  content: "";
+  width: 8px;
+  height: 4px;
+  border-bottom: 1.6px solid white;
+  border-left: 1.6px solid white;
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+.auth-check:focus-visible {
+  outline: 2px solid var(--auth-indigo);
+  outline-offset: 2px;
+}
+
 @media (prefers-color-scheme: dark) {
   .auth-screen {
     --auth-page: #0b163a;
@@ -154,6 +212,14 @@ input {
 
   .brand-lockup .logo-dark {
     display: flex;
+  }
+
+  .brand-mark img.brand-mark-light {
+    display: none;
+  }
+
+  .brand-mark img.brand-mark-dark {
+    display: block;
   }
 
   :root {

@@ -1,5 +1,6 @@
-import { Eye, EyeOff } from "lucide-react"
+import { EyeOff } from "lucide-react"
 import { useState } from "react"
+import eye from "../../assets/login/eye.svg"
 
 type AuthFieldProps = {
   id: string
@@ -12,7 +13,7 @@ type AuthFieldProps = {
 }
 
 const controlClass =
-  "h-12 w-full rounded-[10px] border border-[var(--auth-line)] bg-[var(--auth-surface)] px-3.5 text-[14px] leading-6 text-[var(--auth-ink)] outline-none placeholder:text-[var(--auth-faint)] focus:border-[var(--auth-indigo)]"
+  "h-12 w-full min-w-0 rounded-[10px] border border-[var(--auth-line)] bg-[var(--auth-surface)] px-3.5 text-[14px] leading-6 text-[var(--auth-ink)] outline-none placeholder:text-[var(--auth-faint)] focus:border-[var(--auth-indigo)]"
 
 export function AuthField({
   id,
@@ -31,7 +32,7 @@ export function AuthField({
         {label}
       </label>
       {password ? (
-        <div className="flex h-12 items-center gap-3 rounded-[10px] border border-[var(--auth-line)] bg-[var(--auth-surface)] px-3.5 focus-within:border-[var(--auth-indigo)]">
+        <div className="flex h-12 w-full min-w-0 items-center gap-3 rounded-[10px] border border-[var(--auth-line)] bg-[var(--auth-surface)] px-3.5 focus-within:border-[var(--auth-indigo)]">
           <input
             id={id}
             name={id}
@@ -40,7 +41,7 @@ export function AuthField({
             placeholder={placeholder}
             autoComplete={autoComplete}
             onChange={(event) => onChange(event.target.value)}
-            className="min-w-0 flex-1 bg-transparent text-[14px] leading-6 text-[var(--auth-ink)] outline-none placeholder:text-[var(--auth-faint)]"
+            className="w-full min-w-0 flex-1 bg-transparent text-[14px] leading-6 text-[var(--auth-ink)] outline-none placeholder:text-[var(--auth-faint)]"
           />
           <button
             type="button"
@@ -48,7 +49,11 @@ export function AuthField({
             aria-label={visible ? "Hide password" : "Show password"}
             onClick={() => setVisible((current) => !current)}
           >
-            {visible ? <EyeOff size={20} strokeWidth={1.75} aria-hidden /> : <Eye size={20} strokeWidth={1.75} aria-hidden />}
+            {visible ? (
+              <EyeOff size={20} strokeWidth={1.7} aria-hidden />
+            ) : (
+              <img src={eye} alt="" width="20" height="20" />
+            )}
           </button>
         </div>
       ) : (
