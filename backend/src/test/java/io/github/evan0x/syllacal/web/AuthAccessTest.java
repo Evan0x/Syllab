@@ -59,7 +59,7 @@ class AuthAccessTest {
 
 	@Test
 	void loginPageLoadsWithoutAuthenticationAndSetsTheCsrfCookie() throws Exception {
-		for (String path : new String[] { "/", "/index.html", "/favicon.svg", "/assets/app.js", "/terms", "/privacy", "/calendar" }) {
+		for (String path : new String[] { "/", "/index.html", "/favicon.svg", "/assets/app.js", "/terms", "/privacy", "/calendar", "/workload" }) {
 			MvcResult result = mockMvc.perform(get(path)).andReturn();
 			assertThat(result.getResponse().getStatus()).isNotEqualTo(401);
 			Cookie csrf = result.getResponse().getCookie("XSRF-TOKEN");

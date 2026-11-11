@@ -134,7 +134,7 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
 
   return (
     <div id="top" className="bg-canvas text-ink">
-      <SiteHeader email={email} onLogout={onLogout} />
+      <SiteHeader email={email} onLogout={onLogout} logoHref="#top" sectionLinks />
       <main>
         <section className="flex flex-col items-start gap-4 px-6 pt-9 pb-7 lg:items-center lg:gap-[18px] lg:px-10 lg:pt-[53px] lg:pb-[38px] xl:px-20">
           <p className="text-[10px] font-semibold tracking-[1.2px] text-indigo lg:text-[11px] lg:tracking-[1.7px]">

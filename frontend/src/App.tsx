@@ -7,6 +7,7 @@ import { LandingPage } from "./pages/LandingPage.tsx"
 import { LegalDocumentPage } from "./pages/LegalDocumentPage.tsx"
 import { ReviewCalendarPage } from "./pages/ReviewCalendarPage.tsx"
 import { SavedCalendarPage } from "./pages/SavedCalendarPage.tsx"
+import { WorkloadPage } from "./pages/WorkloadPage.tsx"
 
 type ReviewTerm = {
   termStart: string
@@ -76,6 +77,17 @@ export default function App() {
   if (window.location.pathname.replace(/\/+$/, "") === "/calendar") {
     return (
       <SavedCalendarPage
+        email={account.email}
+        onLogout={() => {
+          void onLogout()
+        }}
+      />
+    )
+  }
+
+  if (window.location.pathname.replace(/\/+$/, "") === "/workload") {
+    return (
+      <WorkloadPage
         email={account.email}
         onLogout={() => {
           void onLogout()

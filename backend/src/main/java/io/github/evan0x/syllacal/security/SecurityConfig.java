@@ -45,7 +45,7 @@ public class SecurityConfig {
 						}))
 				.authorizeHttpRequests(auth -> auth
 						.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-						.requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.svg", "/favicon.ico", "/assets/**", "/terms", "/privacy", "/calendar")
+						.requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.svg", "/favicon.ico", "/assets/**", "/terms", "/privacy", "/calendar", "/workload")
 						.permitAll()
 						.requestMatchers(HttpMethod.GET,
 								"/oauth2/authorization/google",

@@ -83,12 +83,20 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
                 Confirmed dates from the syllabi you have reviewed.
               </p>
             </div>
-            <a
-              href="/"
-              className="text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-            >
-              Upload a syllabus
-            </a>
+            <div className="flex flex-wrap gap-4">
+              <a
+                href="/workload"
+                className="text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+              >
+                See workload
+              </a>
+              <a
+                href="/"
+                className="text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+              >
+                Upload a syllabus
+              </a>
+            </div>
           </header>
           {events === null ? (
             <p className="rounded-2xl border border-hairline bg-surface px-5 py-8 text-[13px] text-muted">Loading your calendar…</p>
