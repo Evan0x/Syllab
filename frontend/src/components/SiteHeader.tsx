@@ -1,4 +1,4 @@
-import { ArrowUpRight } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { BrandLockup } from "./login/BrandLockup.tsx"
 
 type SiteHeaderProps = {
@@ -6,73 +6,135 @@ type SiteHeaderProps = {
   email?: string
   onLogout?: () => void
   logoHref?: string
-  sectionLinks?: boolean
 }
 
-export function SiteHeader({ onHome, email, onLogout, logoHref = "/", sectionLinks = false }: SiteHeaderProps) {
+const navItems = [
+  { href: "/", label: "Upload" },
+  { href: "/calendar", label: "Calendar" },
+  { href: "/workload", label: "Workload" },
+  { href: "/advisor", label: "Advisor" },
+] as const
+
+export function SiteHeader({ onHome, email, onLogout, logoHref = "/" }: SiteHeaderProps) {
   const logoClass =
     "flex items-center gap-[9px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-  const logo = <BrandLockup />
   const path = window.location.pathname.replace(/\/+$/, "") || "/"
 
   return (
-    <header className="flex min-h-[76px] flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-hairline px-6 py-3 lg:h-[88px] lg:flex-nowrap lg:px-10 lg:py-0 xl:px-20">
-      {onHome ? (
-        <button type="button" onClick={onHome} className={`${logoClass} cursor-pointer border-0 bg-transparent p-0 text-left`}>
-          {logo}
-        </button>
-      ) : (
-        <a href={logoHref} className={logoClass}>
-          {logo}
-        </a>
-      )}
-      <nav aria-label="Page" className="flex items-center gap-3 text-[13px] text-muted sm:gap-4 lg:gap-8">
-        {sectionLinks ? (
-          <>
-            <a href="#how-it-works" className="hidden rounded-sm whitespace-nowrap hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:inline">
-              How it works
-            </a>
-            <a href="#privacy" className="hidden rounded-sm whitespace-nowrap hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:inline">
-              Privacy
-            </a>
-          </>
-        ) : null}
-        {email ? (
-          <div className="flex items-center gap-3 sm:gap-4">
-            <a
-              href="/calendar"
-              aria-current={path === "/calendar" ? "page" : undefined}
-              className="rounded-sm whitespace-nowrap text-ink hover:text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-            >
-              Calendar
-            </a>
-            <a
-              href="/workload"
-              aria-current={path === "/workload" ? "page" : undefined}
-              className="rounded-sm whitespace-nowrap text-ink hover:text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-            >
-              Workload
-            </a>
-            <p className="hidden max-w-40 truncate text-[12px] text-ink xl:block">{email}</p>
-            {onLogout ? (
-              <button
-                type="button"
-                onClick={onLogout}
-                className="rounded-sm whitespace-nowrap text-[13px] text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-              >
-                Log out
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-        {email ? null : (
-          <a href="#help" className="inline-flex items-center gap-1 rounded-sm whitespace-nowrap hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo lg:hidden">
-            Get help
-            <ArrowUpRight size={14} strokeWidth={1.75} aria-hidden />
+    <header className="site-header border-b border-hairline">
+      <div className="flex h-14 items-center justify-between gap-x-4 px-5 lg:px-8 xl:px-12">
+        {onHome ? (
+          <button type="button" onClick={onHome} className={`${logoClass} cursor-pointer border-0 bg-transparent p-0 text-left`}>
+            <BrandLockup />
+          </button>
+        ) : (
+          <a href={logoHref} className={logoClass}>
+            <BrandLockup />
           </a>
         )}
-      </nav>
+        {email ? (
+          <div className="flex min-w-0 items-center gap-3 sm:gap-5">
+            <nav aria-label="Primary" className="hidden items-center gap-0.5 text-[13px] sm:flex">
+              <NavLinks path={path} onHome={onHome} />
+            </nav>
+            {onLogout ? <AccountMenu email={email} onLogout={onLogout} /> : null}
+          </div>
+        ) : null}
+      </div>
+      {email ? (
+        <nav aria-label="Primary" className="flex gap-0.5 overflow-x-auto border-t border-hairline px-3 py-1.5 text-[13px] sm:hidden">
+          <NavLinks path={path} onHome={onHome} />
+        </nav>
+      ) : null}
     </header>
   )
 }
 
+function NavLinks({ path, onHome }: { path: string; onHome?: () => void }) {
+  return navItems.map((item) => {
+    const current = item.href === "/" ? path === "/" : path === item.href
+    if (item.href === "/" && onHome) {
+      return (
+        <button
+          key={item.href}
+          type="button"
+          onClick={onHome}
+          aria-current={current ? "page" : undefined}
+          className={navClass(current)}
+        >
+          {item.label}
+        </button>
+      )
+    }
+    return (
+      <a key={item.href} href={item.href} aria-current={current ? "page" : undefined} className={navClass(current)}>
+        {item.label}
+      </a>
+    )
+  })
+}
+
+function navClass(current: boolean) {
+  return `shrink-0 rounded-md px-2.5 py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
+    current ? "bg-well font-medium text-ink" : "text-muted hover:bg-well hover:text-ink"
+  }`
+}
+
+function AccountMenu({ email, onLogout }: { email: string; onLogout: () => void }) {
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const initial = email.trim().charAt(0).toUpperCase() || "U"
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    function onPointer(event: MouseEvent) {
+      if (!root.current?.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", onPointer)
+    document.addEventListener("keydown", onKey)
+    return () => {
+      document.removeEventListener("mousedown", onPointer)
+      document.removeEventListener("keydown", onKey)
+    }
+  }, [open])
+
+  return (
+    <div ref={root} className="relative shrink-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => setOpen((current) => !current)}
+        className="flex size-8 items-center justify-center rounded-full bg-well text-[12px] font-medium text-ink hover:bg-indigo-soft hover:text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+      >
+        <span className="sr-only">Account menu for {email}</span>
+        <span aria-hidden>{initial}</span>
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          className="absolute right-0 mt-2 w-56 rounded-lg border border-hairline bg-surface p-1.5 shadow-float"
+        >
+          <p className="break-all px-3 py-2 text-[12px] leading-5 text-muted">{email}</p>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onLogout}
+            className="flex w-full rounded-lg px-3 py-2 text-left text-[13px] text-ink hover:bg-well focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+          >
+            Log out
+          </button>
+        </div>
+      ) : null}
+    </div>
+  )
+}

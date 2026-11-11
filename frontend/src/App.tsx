@@ -7,6 +7,7 @@ import { LandingPage } from "./pages/LandingPage.tsx"
 import { LegalDocumentPage } from "./pages/LegalDocumentPage.tsx"
 import { ReviewCalendarPage } from "./pages/ReviewCalendarPage.tsx"
 import { SavedCalendarPage } from "./pages/SavedCalendarPage.tsx"
+import { AdvisorPage } from "./pages/AdvisorPage.tsx"
 import { WorkloadPage } from "./pages/WorkloadPage.tsx"
 
 type ReviewTerm = {
@@ -67,7 +68,17 @@ export default function App() {
   }
 
   if (account === undefined) {
-    return <main className="min-h-screen bg-canvas" />
+    return (
+      <div className="min-h-screen bg-canvas">
+        <div className="site-header h-14 border-b border-hairline" />
+        <div className="mx-auto w-full max-w-[960px] px-5 pt-10">
+          <div className="h-3 w-16 rounded bg-well" />
+          <div className="mt-3 h-6 w-48 rounded bg-well" />
+          <div className="mt-2 h-4 w-72 max-w-full rounded bg-well" />
+          <div className="panel mt-8 h-40" />
+        </div>
+      </div>
+    )
   }
 
   if (account === null) {
@@ -88,6 +99,17 @@ export default function App() {
   if (window.location.pathname.replace(/\/+$/, "") === "/workload") {
     return (
       <WorkloadPage
+        email={account.email}
+        onLogout={() => {
+          void onLogout()
+        }}
+      />
+    )
+  }
+
+  if (window.location.pathname.replace(/\/+$/, "") === "/advisor") {
+    return (
+      <AdvisorPage
         email={account.email}
         onLogout={() => {
           void onLogout()

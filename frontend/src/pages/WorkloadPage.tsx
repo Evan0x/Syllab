@@ -1,14 +1,19 @@
+import { CalendarDays, LoaderCircle, TriangleAlert, Upload } from "lucide-react"
 import { useEffect, useState } from "react"
 import { loadWorkload, loadWorkloadInsights } from "../api/workload.ts"
 import type { CourseLoad, DayLoad, WeekLoad, WorkloadInsights, WorkloadReport } from "../api/workload.ts"
 import { SyllabusApiError } from "../api/syllabus.ts"
-import { SiteFooter } from "../components/SiteFooter.tsx"
-import { SiteHeader } from "../components/SiteHeader.tsx"
+import { Button } from "../components/Button.tsx"
+import { EmptyState } from "../components/EmptyState.tsx"
+import { PageHeader } from "../components/PageHeader.tsx"
+import { PageShell } from "../components/PageShell.tsx"
 import { formatLongDate, formatMonthDay, formatTermRange, formatWeekday, isoDate } from "../lib/dates.ts"
+import { usePageTitle } from "../lib/pageTitle.ts"
 
 type Range = "week" | "four" | "semester"
 
 export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () => void }) {
+  usePageTitle("Workload · Syllapin")
   const [report, setReport] = useState<WorkloadReport | null>(null)
   const [error, setError] = useState<string>()
   const [range, setRange] = useState<Range>("four")
@@ -50,52 +55,55 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
   const empty = report !== null && report.courses.length === 0 && report.semesterStart === null
 
   return (
-    <div className="bg-canvas text-ink">
-      <SiteHeader email={email} onLogout={onLogout} />
-      <main className="px-6 pt-9 pb-16 lg:px-10 lg:pt-[53px] xl:px-20">
-        <div className="mx-auto flex w-full max-w-[960px] flex-col gap-8">
-          <header className="flex flex-col items-start gap-4">
-            <p className="text-[10px] font-semibold tracking-[1.2px] text-indigo lg:text-[11px] lg:tracking-[1.7px]">
-              WORKLOAD
-            </p>
-            <div className="flex flex-col gap-2">
-              <h1 className="font-serif text-[49px] leading-[1.06] italic tracking-[-1.4px] text-ink lg:text-[68px] lg:leading-[1.1] lg:tracking-[-2px]">
-                Your semester
-              </h1>
-              <p className="max-w-[640px] text-[15px] leading-[1.5] text-muted lg:text-[16px]">
-                {report?.semesterStart && report.semesterEnd
-                  ? `${formatTermRange(report.semesterStart, report.semesterEnd)}. Counts come from confirmed calendar events.`
-                  : "Counts come from the courses and confirmed events already on your calendar."}
-              </p>
-            </div>
-            <a href="/calendar" className="text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo">
-              Open calendar
-            </a>
-          </header>
+    <PageShell email={email} onLogout={onLogout}>
+          <PageHeader
+            eyebrow="Workload"
+            title="This semester at a glance"
+            description={
+              report?.semesterStart && report.semesterEnd
+                ? `${formatTermRange(report.semesterStart, report.semesterEnd)}. Counts come from confirmed calendar events, not estimates of hours.`
+                : "Counts come from the courses and confirmed events already on your calendar."
+            }
+          />
 
           {report === null && !error ? (
-            <p className="rounded-2xl border border-hairline bg-surface px-5 py-8 text-[13px] text-muted">Loading your workload…</p>
+            <EmptyState
+              icon={LoaderCircle}
+              tone="loading"
+              title="Loading your workload"
+              message="Counting confirmed deadlines across your saved courses."
+            />
           ) : null}
           {error ? (
-            <p role="alert" className="rounded-2xl border border-hairline bg-error-soft px-5 py-8 text-[13px] text-error">
-              {error}
-            </p>
+            <EmptyState
+              icon={TriangleAlert}
+              tone="error"
+              title="The workload couldn’t load"
+              message={error}
+              action={
+                <div className="w-full max-w-xs">
+                  <Button onClick={() => window.location.reload()}>Try again</Button>
+                </div>
+              }
+            />
           ) : null}
           {empty ? (
-            <section className="rounded-2xl border border-hairline bg-surface px-5 py-8 shadow-[0_8px_32px_rgba(39,35,62,0.03)]">
-              <h2 className="text-[18px] tracking-[-0.3px] text-ink">No saved deadlines yet</h2>
-              <p className="mt-2 max-w-[560px] text-[13px] leading-[1.6] text-muted">
-                Review a syllabus and open its calendar. This page counts those confirmed dates. It does not estimate how long work will take.
-              </p>
-              <a href="/" className="mt-4 inline-block text-[12px] text-indigo">
-                Upload a syllabus
-              </a>
-            </section>
+            <EmptyState
+              icon={CalendarDays}
+              title="No saved deadlines yet"
+              message="Review a syllabus and open its calendar. This page counts those confirmed dates. It does not estimate how long work will take."
+              action={
+                <a href="/" className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo px-4 text-[13px] font-medium text-white hover:bg-indigo-deep">
+                  <Upload size={17} strokeWidth={1.75} aria-hidden />
+                  Upload a syllabus
+                </a>
+              }
+            />
           ) : null}
 
           {report && !empty ? (
             <>
-              <section aria-label="Overview" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+              <section aria-label="Overview" className="panel grid grid-cols-2 lg:grid-cols-6">
                 <Metric label="Active courses" value={report.activeCourses} detail="Terms that include today" />
                 <Metric label="Upcoming assignments" value={report.upcomingAssignments} detail="Assignments and projects" />
                 <Metric label="Upcoming exams" value={report.upcomingExams} detail="Quizzes are counted separately" />
@@ -108,13 +116,13 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
                 />
               </section>
 
-              <section className="rounded-2xl border border-hairline bg-surface p-5 shadow-[0_8px_32px_rgba(39,35,62,0.03)] lg:p-6">
+              <section className="panel p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h2 className="text-[18px] tracking-[-0.3px] text-ink">Weekly workload</h2>
+                    <h2 className="text-[15px] font-medium tracking-[-0.01em] text-ink">Weekly workload</h2>
                     <p className="mt-1 text-[12px] text-muted">Each bar is a count of events, split by type and course.</p>
                   </div>
-                  <div className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-hairline p-1" role="tablist" aria-label="Chart range">
+                  <div className="segmented" role="tablist" aria-label="Chart range">
                     <RangeButton current={range} value="week" label="Current week" onSelect={setRange} />
                     <RangeButton current={range} value="four" label="Next 4 weeks" onSelect={setRange} />
                     <RangeButton current={range} value="semester" label="Entire semester" onSelect={setRange} />
@@ -141,10 +149,10 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
                 ) : null}
               </section>
 
-              <section className="flex flex-col gap-3">
-                <h2 className="text-[18px] tracking-[-0.3px] text-ink">Courses</h2>
+              <section className="panel overflow-hidden">
+                <h2 className="border-b border-hairline px-5 py-3 text-[13px] font-medium text-ink">Courses</h2>
                 {report.courses.length === 0 ? (
-                  <p className="rounded-2xl border border-hairline bg-surface px-5 py-6 text-[13px] text-muted">
+                  <p className="px-5 py-6 text-[13px] text-muted">
                     No active course has an upcoming deadline.
                   </p>
                 ) : (
@@ -152,22 +160,22 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
                 )}
               </section>
 
-              <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <article className="rounded-2xl border border-hairline bg-surface p-5">
-                  <h2 className="text-[18px] tracking-[-0.3px] text-ink">Busy periods</h2>
-                  <p className="mt-1 text-[12px] leading-[1.5] text-muted">These are counts from the calendar. They are not a difficulty score.</p>
+              <section className="panel grid grid-cols-1 lg:grid-cols-2">
+                <article className="border-b border-hairline p-5 lg:border-r lg:border-b-0">
+                  <h2 className="text-[15px] font-medium tracking-[-0.01em] text-ink">Busy periods</h2>
+                  <p className="mt-1 text-[12px] leading-5 text-muted">These are counts from the calendar. They are not a difficulty score.</p>
                   {report.busyWeeks.length === 0 && report.crowdedDays.length === 0 && report.overlaps.length === 0 ? (
                     <p className="mt-4 text-[13px] text-muted">No crowded week, day, or time overlap is coming up.</p>
                   ) : (
                     <ul className="mt-4 flex flex-col gap-3">
                       {report.busyWeeks.map((week) => (
-                        <li key={week.start} className="rounded-xl bg-indigo-soft px-4 py-3">
+                        <li key={week.start} className="rounded-md bg-indigo-soft px-3 py-2.5">
                           <p className="text-[13px] text-ink">{formatTermRange(week.start, week.end)}</p>
                           <p className="mt-1 text-[12px] text-muted">{week.events} events · {week.reasons.join(" · ")}</p>
                         </li>
                       ))}
                       {report.overlaps.map((overlap) => (
-                        <li key={overlap.date} className="rounded-xl bg-error-soft px-4 py-3">
+                        <li key={overlap.date} className="rounded-md bg-error-soft px-3 py-2.5">
                           <p className="text-[13px] text-ink">{formatLongDate(overlap.date)}</p>
                           <p className="mt-1 text-[12px] text-error">{overlap.titles.join(" and ")} overlap in time.</p>
                         </li>
@@ -175,8 +183,8 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
                     </ul>
                   )}
                 </article>
-                <article className="rounded-2xl border border-hairline bg-surface p-5">
-                  <h2 className="text-[18px] tracking-[-0.3px] text-ink">From your calendar</h2>
+                <article className="p-5">
+                  <h2 className="text-[15px] font-medium tracking-[-0.01em] text-ink">From your calendar</h2>
                   <ul className="mt-4 flex flex-col gap-3">
                     {report.facts.map((fact) => (
                       <li key={fact} className="border-l-2 border-indigo-line pl-3 text-[13px] leading-[1.55] text-ink">
@@ -194,7 +202,7 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
                         type="button"
                         onClick={() => void askForSuggestions()}
                         disabled={insightLoading}
-                        className="mt-3 h-10 rounded-lg bg-indigo px-4 text-[13px] text-white hover:bg-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo disabled:bg-disabled disabled:text-disabled-ink"
+                        className="mt-3 h-9 rounded-md bg-indigo px-3.5 text-[13px] font-medium text-white hover:bg-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo disabled:bg-disabled disabled:text-disabled-ink"
                       >
                         {insightLoading ? "Writing suggestions…" : "Get suggestions"}
                       </button>
@@ -224,19 +232,16 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
               </section>
             </>
           ) : null}
-        </div>
-      </main>
-      <SiteFooter />
-    </div>
+    </PageShell>
   )
 }
 
 function Metric({ label, value, detail }: { label: string; value: number; detail: string }) {
   return (
-    <article className="rounded-2xl border border-hairline bg-surface px-4 py-4 shadow-[0_8px_32px_rgba(39,35,62,0.03)]">
-      <p className="text-[10px] font-semibold tracking-[0.8px] text-muted uppercase">{label}</p>
-      <p className="mt-2 font-serif text-[40px] leading-none tracking-[-1px] text-ink">{value}</p>
-      <p className="mt-2 text-[12px] leading-[1.4] text-muted">{detail}</p>
+    <article className="border-b border-hairline px-4 py-3.5 last:border-b-0 even:border-l lg:border-b-0 lg:border-r lg:last:border-r-0 lg:even:border-l-0">
+      <p className="text-[11px] font-medium text-muted">{label}</p>
+      <p className="mt-1 text-[22px] leading-none font-medium tracking-[-0.03em] tabular-nums text-ink">{value}</p>
+      <p className="mt-1.5 text-[12px] leading-4 text-muted">{detail}</p>
     </article>
   )
 }
@@ -246,10 +251,10 @@ function CourseCard({ course }: { course: CourseLoad }) {
     ? course.weightsPresent.map((weight) => `${trimNumber(weight)}%`).join(", ")
     : null
   return (
-    <article className="rounded-2xl border border-hairline bg-surface p-5">
+    <article className="border-b border-hairline px-5 py-4 last:border-b-0">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-[16px] text-ink">{course.name}</h3>
+          <h3 className="text-[15px] font-medium tracking-[-0.01em] text-ink">{course.name}</h3>
           {course.termStart && course.termEnd ? (
             <p className="mt-1 text-[12px] text-muted">{formatTermRange(course.termStart, course.termEnd)}</p>
           ) : null}
@@ -265,15 +270,15 @@ function CourseCard({ course }: { course: CourseLoad }) {
       ) : null}
       <dl className="mt-4 grid grid-cols-2 gap-3 text-[13px] sm:grid-cols-3">
         <div>
-          <dt className="text-[10px] font-semibold tracking-[0.6px] text-muted uppercase">Assignments</dt>
+          <dt className="text-[11px] font-medium text-muted">Assignments</dt>
           <dd className="mt-1 text-ink">{course.upcomingAssignments}</dd>
         </div>
         <div>
-          <dt className="text-[10px] font-semibold tracking-[0.6px] text-muted uppercase">Exams</dt>
+          <dt className="text-[11px] font-medium text-muted">Exams</dt>
           <dd className="mt-1 text-ink">{course.upcomingExams}</dd>
         </div>
         <div>
-          <dt className="text-[10px] font-semibold tracking-[0.6px] text-muted uppercase">Weight</dt>
+          <dt className="text-[11px] font-medium text-muted">Weight</dt>
           <dd className="mt-1 text-ink">{weights ?? "Not specified"}</dd>
         </div>
       </dl>
@@ -393,9 +398,6 @@ function RangeButton({
       role="tab"
       aria-selected={selected}
       onClick={() => onSelect(value)}
-      className={`rounded-full px-3 py-1.5 text-[12px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
-        selected ? "bg-indigo text-white" : "text-muted hover:text-ink"
-      }`}
     >
       {label}
     </button>

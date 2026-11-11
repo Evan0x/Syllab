@@ -21,8 +21,8 @@ export function TextField({
 }: TextFieldProps) {
   const errorId = `${id}-error`
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-[13px] text-ink">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[13px] font-medium text-ink">
         {label}
       </label>
       <input
@@ -35,12 +35,10 @@ export function TextField({
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}
-        className={`h-12 w-full rounded-lg border bg-surface px-[13px] text-[14px] text-ink outline-none placeholder:text-placeholder focus:border-indigo ${
-          error ? "border-error" : "border-hairline"
-        }`}
+        className={`control ${error ? "border-error" : ""}`}
       />
       {error ? (
-        <p id={errorId} role="alert" className="text-[12px] leading-[1.45] text-error">
+        <p id={errorId} role="alert" className="text-[12px] leading-4 text-error">
           {error}
         </p>
       ) : null}

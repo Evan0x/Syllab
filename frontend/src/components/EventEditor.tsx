@@ -19,7 +19,7 @@ type EventEditorProps = {
   onSave: (fields: EventFields) => void
 }
 
-const KNOWN_TYPES = ["EXAM", "QUIZ", "ASSIGNMENT", "ADMIN"]
+const KNOWN_TYPES = ["EXAM", "QUIZ", "ASSIGNMENT", "PROJECT", "ADMIN"]
 
 export function EventEditor({ heading, initial, notice, onCancel, onSave }: EventEditorProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -93,18 +93,18 @@ export function EventEditor({ heading, initial, notice, onCancel, onSave }: Even
       <form
         noValidate
         onSubmit={save}
-        className="flex max-h-[calc(100vh-2rem)] flex-col gap-4 overflow-y-auto rounded-2xl border border-hairline bg-surface p-5 shadow-[0_8px_32px_rgba(39,35,62,0.08)] sm:p-6"
+        className="panel flex max-h-[calc(100vh-2rem)] flex-col gap-3.5 overflow-y-auto p-5 shadow-float"
       >
-        <h2 id={titleId} className="text-[18px] tracking-[-0.3px] text-ink">
+        <h2 id={titleId} className="text-[15px] font-medium tracking-[-0.01em] text-ink">
           {heading}
         </h2>
-        <Field label="Title" value={title} onChange={setTitle} />
-        <label className="flex flex-col gap-2 text-[13px] text-ink">
+        <Field label="Title" value={title} onChange={setTitle} autoFocus />
+        <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
           Type
           <select
             value={type}
             onChange={(event) => setType(event.target.value)}
-            className="h-12 rounded-lg border border-hairline bg-surface px-[13px] text-[14px] text-ink outline-none focus:border-indigo"
+            className="control font-normal"
           >
             <option value="">Not specified</option>
             {typeOptions.map((option) => (
@@ -114,38 +114,38 @@ export function EventEditor({ heading, initial, notice, onCancel, onSave }: Even
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-2 text-[13px] text-ink">
+        <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
           Date
           <input
             type="date"
             required
             value={date}
             onChange={(event) => setDate(event.target.value)}
-            className="h-12 rounded-lg border border-hairline bg-surface px-[13px] text-[14px] text-ink outline-none focus:border-indigo"
+            className="control font-normal"
           />
         </label>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <TimeField label="Start time" value={time} onChange={setTime} />
           <TimeField label="End time" value={endTime} onChange={setEndTime} />
         </div>
         <Field label="Location" value={location} onChange={setLocation} placeholder="Optional" />
         <Field label="Weight percentage" value={weight} onChange={setWeight} placeholder="Optional" />
         {error || notice ? (
-          <p role="alert" className="text-[12px] leading-[1.45] text-error">
+          <p role="alert" className="text-[12px] leading-4 text-error">
             {error ?? notice}
           </p>
         ) : null}
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onCancel}
-            className="h-12 rounded-lg px-4 text-[14px] text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            className="h-9 rounded-md px-3 text-[13px] text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="h-12 rounded-lg bg-indigo px-5 text-[14px] text-white hover:bg-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            className="h-9 rounded-md bg-indigo px-3.5 text-[13px] font-medium text-white hover:bg-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
           >
             Save event
           </button>
@@ -160,22 +160,25 @@ function Field({
   value,
   onChange,
   placeholder,
+  autoFocus = false,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  autoFocus?: boolean
 }) {
   return (
-    <label className="flex flex-col gap-2 text-[13px] text-ink">
+    <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
       {label}
       <input
         type="text"
         value={value}
         placeholder={placeholder}
         autoComplete="off"
+        autoFocus={autoFocus}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 rounded-lg border border-hairline bg-surface px-[13px] text-[14px] text-ink outline-none placeholder:text-placeholder focus:border-indigo"
+        className="control font-normal"
       />
     </label>
   )
@@ -191,13 +194,13 @@ function TimeField({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="flex flex-col gap-2 text-[13px] text-ink">
+    <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
       {label}
       <input
         type="time"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 rounded-lg border border-hairline bg-surface px-[13px] text-[14px] text-ink outline-none focus:border-indigo"
+        className="control font-normal"
       />
     </label>
   )

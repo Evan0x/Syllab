@@ -1,15 +1,17 @@
 import { ArrowLeft, Download, LoaderCircle, Plus, TriangleAlert } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { saveReviewedCalendar } from "../api/events.ts"
 import { downloadBlob, exportCalendar, isAbortError, SyllabusApiError } from "../api/syllabus.ts"
 import type { CalendarEvent, PreviewResponse } from "../api/syllabus.ts"
 import { Button } from "../components/Button.tsx"
 import { AcademicCalendar } from "../components/calendar/AcademicCalendar.tsx"
 import type { CalendarItem } from "../components/calendar/AcademicCalendar.tsx"
+import { ConfirmDialog } from "../components/ConfirmDialog.tsx"
+import { EmptyState } from "../components/EmptyState.tsx"
 import { EventEditor } from "../components/EventEditor.tsx"
 import type { EventFields } from "../components/EventEditor.tsx"
-import { SiteFooter } from "../components/SiteFooter.tsx"
-import { SiteHeader } from "../components/SiteHeader.tsx"
+import { PageHeader } from "../components/PageHeader.tsx"
+import { PageShell } from "../components/PageShell.tsx"
 import {
   formatLongDate,
   formatMonthDay,
@@ -18,6 +20,7 @@ import {
   formatTimeRange,
   formatWeekday,
 } from "../lib/dates.ts"
+import { usePageTitle } from "../lib/pageTitle.ts"
 
 type ReviewTerm = {
   termStart: string
@@ -45,14 +48,17 @@ type EventGroup = {
 const MISSING = "Not specified"
 
 export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: ReviewCalendarPageProps) {
+  usePageTitle(`${preview?.courseName || "Calendar"} · Syllapin`)
   const [events, setEvents] = useState<ReviewEvent[]>(() => (preview?.events ?? []).map(withId))
   const [courseId] = useState(() => crypto.randomUUID())
   const [showCalendar, setShowCalendar] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string>()
   const [editor, setEditor] = useState<"add" | string | null>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [exportError, setExportError] = useState<string>()
+  const [exported, setExported] = useState(false)
   const [exporting, setExporting] = useState(false)
   const exportingRef = useRef(false)
   const calendarOpened = useRef(false)
@@ -123,6 +129,7 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
       })
       if (token === saveSeq.current) {
         setSaveError(undefined)
+        setSaved(true)
       }
     } catch (error) {
       if (token === saveSeq.current) {
@@ -150,6 +157,7 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
     try {
       const result = await exportCalendar({ courseName: preview.courseName, events })
       downloadBlob(result.blob, result.filename)
+      setExported(true)
     } catch (error) {
       if (!isAbortError(error)) {
         setExportError(
@@ -163,75 +171,66 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
   }
 
   return (
-    <div className="bg-canvas text-ink">
-      <SiteHeader email={email} onLogout={onLogout} onHome={onBack} />
-      <main className="px-6 pt-9 pb-16 lg:px-10 lg:pt-[53px] xl:px-20">
-        <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6">
-          <header className="flex flex-col items-start gap-4">
-            <p className="text-[10px] font-semibold tracking-[1.2px] text-indigo lg:text-[11px] lg:tracking-[1.7px]">
-              REVIEW YOUR CALENDAR
-            </p>
-            <div className="flex flex-col gap-2">
-              <h1 className="font-serif text-[49px] leading-[1.06] italic tracking-[-1.4px] text-ink lg:text-[68px] lg:leading-[1.1] lg:tracking-[-2px]">
-                {preview?.courseName || "Calendar preview"}
-              </h1>
-              <p className="text-[15px] leading-[1.5] text-muted lg:text-[16px]">
-                {semester ?? MISSING}
-              </p>
-            </div>
+    <PageShell email={email} onLogout={onLogout} onHome={onBack}>
+          <PageHeader
+            eyebrow="Review"
+            title={preview?.courseName || "Calendar preview"}
+            description={semester ? `${semester}. Check anything that looks uncertain before you save or export.` : "Check anything that looks uncertain before you save or export."}
+          >
             {preview ? <EventStats events={events} /> : null}
-          </header>
+          </PageHeader>
 
           {!preview ? (
-            <StatusCard
+            <EmptyState
+              icon={TriangleAlert}
+              tone="error"
               title="We couldn’t show this calendar"
               message="Go back and upload the syllabus again."
-              tone="error"
-              onBack={onBack}
+              action={
+                <div className="w-full max-w-xs">
+                  <Button icon={ArrowLeft} onClick={onBack}>
+                    Back to upload
+                  </Button>
+                </div>
+              }
             />
           ) : (
             <>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCalendar(false)}
-                  className={`rounded-full border px-3 py-1.5 text-[12px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
-                    showCalendar ? "border-hairline bg-surface text-ink" : "border-indigo bg-indigo-soft text-indigo"
-                  }`}
-                >
-                  Review list
-                </button>
-                <button
-                  type="button"
-                  onClick={openCalendar}
-                  className={`rounded-full border px-3 py-1.5 text-[12px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
-                    showCalendar ? "border-indigo bg-indigo-soft text-indigo" : "border-hairline bg-surface text-ink"
-                  }`}
-                >
-                  Calendar
-                </button>
-                {saving ? <span className="text-[12px] text-muted">Saving…</span> : null}
-              </div>
-              {saveError ? (
-                <p role="alert" className="text-[12px] leading-[1.45] text-error">
-                  {saveError}
-                </p>
-              ) : null}
-              {showCalendar ? (
-                <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="segmented" role="tablist" aria-label="Review view">
                   <button
                     type="button"
+                    role="tab"
+                    aria-selected={!showCalendar}
                     onClick={() => setShowCalendar(false)}
-                    className="w-fit text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
                   >
-                    Back to review
+                    Review list
                   </button>
-                  <AcademicCalendar
-                    events={events.filter((event) => event.date && event.title?.trim()).map((event) => toCalendarItem(event, preview.courseName))}
-                    onEdit={(event) => setEditor(event.id)}
-                    onDelete={(event) => setPendingDeleteId(event.id)}
-                  />
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={showCalendar}
+                    onClick={openCalendar}
+                  >
+                    Calendar
+                  </button>
                 </div>
+                <p className={`text-[12px] ${saveError ? "text-error" : "text-muted"}`} role={saveError ? "alert" : "status"} aria-live="polite">
+                  {saving
+                    ? "Saving to your calendar…"
+                    : saveError
+                      ? saveError
+                      : saved
+                        ? "Saved to your calendar"
+                        : "Open calendar view to keep these dates on Syllapin."}
+                </p>
+              </div>
+              {showCalendar ? (
+                <AcademicCalendar
+                  events={events.filter((event) => event.date && event.title?.trim()).map((event) => toCalendarItem(event, preview.courseName))}
+                  onEdit={(event) => setEditor(event.id)}
+                  onDelete={(event) => setPendingDeleteId(event.id)}
+                />
               ) : (
               <>
               {groups.length > 1 ? (
@@ -244,7 +243,7 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
                         type="button"
                         aria-current={selected ? "true" : undefined}
                         onClick={() => showMonth(group.key)}
-                        className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
+                        className={`shrink-0 rounded-md border px-3 py-1.5 text-[12px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
                           selected
                             ? "border-indigo bg-indigo-soft text-indigo"
                             : "border-hairline bg-surface text-ink hover:border-indigo-line"
@@ -257,7 +256,7 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
                 </nav>
               ) : null}
 
-              <div className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-[0_8px_32px_rgba(39,35,62,0.03)]">
+              <div className="panel overflow-hidden">
                 {preview.warnings.length > 0 ? (
                   <div className="border-b border-hairline bg-error-soft px-5 py-4 lg:px-8">
                     <p className="flex items-center gap-2 text-[13px] text-error">
@@ -273,7 +272,7 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
                 ) : null}
                 {events.length === 0 ? (
                   <p className="p-6 text-[13px] leading-[1.6] text-muted lg:p-8">
-                    No events yet. Add an event, or export a calendar with none.
+                    No events yet. Add the dates you still need, then export.
                   </p>
                 ) : (
                   groups.map((group) => (
@@ -281,7 +280,7 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
                       key={group.key}
                       id={`review-month-${group.key}`}
                       aria-label={group.label}
-                      className="scroll-mt-6"
+                      className="scroll-mt-28"
                     >
                       <h2 className="border-b border-hairline px-5 py-3 text-[13px] font-medium tracking-[-0.1px] text-ink lg:px-8">
                         {group.label}
@@ -303,7 +302,7 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
               </>
               )}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Button icon={Plus} onClick={() => setEditor("add")}>
+                <Button icon={Plus} variant="secondary" onClick={() => setEditor("add")}>
                   Add event
                 </Button>
                 <Button
@@ -312,12 +311,16 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
                   spinIcon={exporting}
                   onClick={() => void exportIcs()}
                 >
-                  {exporting ? "Exporting calendar…" : "Export calendar"}
+                  {exporting ? "Exporting calendar…" : "Export .ics file"}
                 </Button>
               </div>
               {exportError ? (
                 <p role="alert" className="text-[12px] leading-[1.45] text-error">
                   {exportError}
+                </p>
+              ) : exported ? (
+                <p role="status" className="text-[12px] leading-[1.45] text-success">
+                  Calendar downloaded. Import the .ics file into Google Calendar, Apple Calendar, or Outlook.
                 </p>
               ) : null}
             </>
@@ -326,12 +329,10 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
           <button
             type="button"
             onClick={onBack}
-            className="w-fit text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            className="w-fit text-[13px] font-medium text-indigo hover:text-indigo-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
           >
-            Upload another PDF
+            Upload another syllabus
           </button>
-        </div>
-      </main>
       {editor === "add" ? (
         <EventEditor
           heading="Add event"
@@ -349,14 +350,15 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
         />
       ) : null}
       {pendingDelete ? (
-        <ConfirmDelete
-          title={pendingDelete.title?.trim() || "Untitled event"}
+        <ConfirmDialog
+          title="Delete this event?"
+          message={`${pendingDelete.title?.trim() || "Untitled event"} will be removed from this review and from the saved calendar.`}
+          confirmLabel="Delete event"
           onCancel={() => setPendingDeleteId(null)}
           onConfirm={confirmDelete}
         />
       ) : null}
-      <SiteFooter />
-    </div>
+    </PageShell>
   )
 }
 
@@ -372,36 +374,11 @@ function EventStats({ events }: { events: CalendarEvent[] }) {
     <dl className="grid w-full grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
       {stats.map(([label, count]) => (
         <div key={label} className="min-w-0">
-          <dt className="text-[10px] font-semibold tracking-[0.8px] text-muted uppercase">{label}</dt>
-          <dd className="mt-0.5 text-[18px] tracking-[-0.3px] text-ink">{count}</dd>
+          <dt className="text-[11px] font-medium text-muted">{label}</dt>
+          <dd className="mt-0.5 text-[16px] font-medium tabular-nums tracking-[-0.02em] text-ink">{count}</dd>
         </div>
       ))}
     </dl>
-  )
-}
-
-function StatusCard({
-  title,
-  message,
-  onBack,
-  tone = "empty",
-}: {
-  title: string
-  message: string
-  onBack: () => void
-  tone?: "empty" | "error"
-}) {
-  return (
-    <div
-      className="flex flex-col gap-5 rounded-2xl border border-hairline bg-surface p-6 shadow-[0_8px_32px_rgba(39,35,62,0.03)] lg:p-8"
-      role={tone === "error" ? "alert" : "status"}
-    >
-      <h2 className="text-[18px] text-ink">{title}</h2>
-      <p className="text-[13px] leading-[1.6] text-muted">{message}</p>
-      <Button icon={ArrowLeft} onClick={onBack}>
-        Back to upload
-      </Button>
-    </div>
   )
 }
 
@@ -422,7 +399,7 @@ function EventRow({
   return (
     <li
       className={`flex flex-col gap-3 border-b border-hairline px-5 py-4 last:border-b-0 sm:flex-row sm:items-start sm:gap-6 lg:px-8 lg:py-5 ${
-        event.confidence?.trim().toUpperCase() === "LOW" ? "bg-error-soft" : ""
+        event.confidence?.trim().toUpperCase() === "LOW" ? "border-l-2 border-l-error bg-error-soft/40" : ""
       }`}
     >
       <div className="flex w-14 shrink-0 flex-col">
@@ -431,7 +408,7 @@ function EventRow({
             <span className="text-[11px] font-semibold tracking-[0.8px] text-indigo">
               {formatWeekday(event.date)}
             </span>
-            <span className="text-[22px] leading-none tracking-[-0.4px] text-ink">{dated.day}</span>
+            <span className="text-[15px] leading-none font-medium tracking-[-0.02em] text-ink">{dated.day}</span>
             <span className="mt-1 text-[12px] text-muted">{dated.month}</span>
           </>
         ) : (
@@ -444,10 +421,10 @@ function EventRow({
             {event.title?.trim() || "Untitled event"}
           </h3>
           <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-            <span className={`rounded-full px-2 py-0.5 text-[11px] ${typeClass(event.type)}`}>
+            <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${typeClass(event.type)}`}>
               {event.type?.trim() ? formatType(event.type) : MISSING}
             </span>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] ${confidenceClass(event.confidence)}`}>
+            <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${confidenceClass(event.confidence)}`}>
               {confidenceLabel(event.confidence)}
             </span>
           </div>
@@ -462,7 +439,7 @@ function EventRow({
         </dl>
         {showQuote ? (
           <details className="mt-3">
-            <summary className="cursor-pointer text-[12px] text-muted">Source quote</summary>
+            <summary className="cursor-pointer text-[12px] text-muted hover:text-ink">Show syllabus quote</summary>
             <p className="mt-2 border-l-2 border-indigo-line pl-3 text-[12px] leading-[1.55] text-muted">{quote}</p>
           </details>
         ) : null}
@@ -484,65 +461,6 @@ function EventRow({
         </div>
       </div>
     </li>
-  )
-}
-
-function ConfirmDelete({
-  title,
-  onCancel,
-  onConfirm,
-}: {
-  title: string
-  onCancel: () => void
-  onConfirm: () => void
-}) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
-  const titleId = "delete-event-title"
-
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) {
-      return
-    }
-    dialog.showModal()
-    return () => dialog.close()
-  }, [])
-
-  return (
-    <dialog
-      ref={dialogRef}
-      className="review-dialog w-full max-w-[420px]"
-      aria-labelledby={titleId}
-      onCancel={(event) => {
-        event.preventDefault()
-        onCancel()
-      }}
-    >
-      <div className="flex flex-col gap-4 rounded-2xl border border-hairline bg-surface p-5 shadow-[0_8px_32px_rgba(39,35,62,0.08)] sm:p-6">
-        <h2 id={titleId} className="text-[18px] tracking-[-0.3px] text-ink">
-          Delete this event?
-        </h2>
-        <p className="text-[13px] leading-[1.6] text-muted">
-          {title} will be removed from this review and from the saved calendar.
-        </p>
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="h-12 rounded-lg px-4 text-[14px] text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="h-12 rounded-lg bg-error px-5 text-[14px] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-          >
-            Delete event
-          </button>
-        </div>
-      </div>
-    </dialog>
   )
 }
 
@@ -609,7 +527,7 @@ function Detail({ label, value }: { label: string; value: string | null }) {
   const specified = Boolean(value)
   return (
     <div className="min-w-0">
-      <dt className="text-[10px] font-semibold tracking-[0.8px] text-muted uppercase">{label}</dt>
+      <dt className="text-[11px] font-medium text-muted">{label}</dt>
       <dd className={`mt-0.5 text-[13px] leading-[1.4] break-words ${specified ? "text-ink" : "text-placeholder"}`}>
         {value ?? MISSING}
       </dd>
@@ -654,7 +572,7 @@ function typeClass(type: string | null): string {
   if (value === "QUIZ") {
     return "bg-indigo-soft text-indigo"
   }
-  if (value === "ASSIGNMENT") {
+  if (value === "ASSIGNMENT" || value === "PROJECT") {
     return "bg-well text-ink"
   }
   if (value === "ADMIN") {

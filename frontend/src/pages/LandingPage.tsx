@@ -7,11 +7,11 @@ import { ConversionStatus } from "../components/ConversionStatus.tsx"
 import { DateField } from "../components/DateField.tsx"
 import { FileDropzone } from "../components/FileDropzone.tsx"
 import { HowItWorks } from "../components/HowItWorks.tsx"
-import { SiteFooter } from "../components/SiteFooter.tsx"
-import { SiteHeader } from "../components/SiteHeader.tsx"
+import { PageShell } from "../components/PageShell.tsx"
 import { TextField } from "../components/TextField.tsx"
 import { formatLongDate, formatTermRange } from "../lib/dates.ts"
 import { inspectSyllabusFile, type FileProblem } from "../lib/files.ts"
+import { usePageTitle } from "../lib/pageTitle.ts"
 
 type Phase = "form" | "loading" | "error"
 
@@ -27,6 +27,7 @@ const MISSING_START = "Enter the first day of your semester."
 const MISSING_END = "Enter the last day of your semester."
 
 export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
+  usePageTitle("Upload syllabus · Syllapin")
   const [file, setFile] = useState<File | null>(null)
   const [problem, setProblem] = useState<FileProblem | null>(null)
   const [missingFile, setMissingFile] = useState<string>()
@@ -133,21 +134,17 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
   }
 
   return (
-    <div id="top" className="bg-canvas text-ink">
-      <SiteHeader email={email} onLogout={onLogout} logoHref="#top" sectionLinks />
-      <main>
-        <section className="flex flex-col items-start gap-4 px-6 pt-9 pb-7 lg:items-center lg:gap-[18px] lg:px-10 lg:pt-[53px] lg:pb-[38px] xl:px-20">
-          <p className="text-[10px] font-semibold tracking-[1.2px] text-indigo lg:text-[11px] lg:tracking-[1.7px]">
-            <span className="lg:hidden">LESS ADMIN. MORE SEMESTER.</span>
-            <span className="hidden lg:inline">A LITTLE LESS ADMIN. A LOT MORE SEMESTER.</span>
+    <PageShell email={email} onLogout={onLogout} logoHref="#top" contained={false}>
+      <div id="top">
+        <section className="flex flex-col items-start gap-3 px-5 pt-10 pb-6 lg:items-center lg:gap-4 lg:px-8 lg:pt-14 lg:pb-8 xl:px-12">
+          <p className="text-[11px] font-medium tracking-[0.12em] text-muted uppercase">
+            Less admin. More semester.
           </p>
-          <h1 className="text-[44px] leading-[1.06] font-medium tracking-[-1.8px] text-ink lg:text-center lg:text-[59px] lg:leading-[1.15] lg:tracking-[-2.5px]">
+          <h1 className="text-[28px] leading-[1.15] font-medium tracking-[-0.03em] text-ink lg:text-center lg:text-[32px]">
             <span className="block lg:inline">Your syllabus, </span>
-            <span className="block font-serif text-[49px] leading-[1.06] italic lg:inline lg:text-[68px] lg:leading-[1.15]">
-              on your calendar.
-            </span>
+            <span className="block font-serif italic lg:inline">on your calendar.</span>
           </h1>
-          <p className="max-w-[620px] text-[15px] leading-[1.65] text-muted lg:text-center lg:text-[16px]">
+          <p className="max-w-[540px] text-[15px] leading-6 text-muted lg:text-center">
             <span className="lg:hidden">
               Syllapin turns your syllabus PDF into a calendar of classes, assignments and exams. One upload. A clearer semester.
             </span>
@@ -160,12 +157,12 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
           <p className="text-[12px] text-indigo lg:hidden">Free to use.</p>
         </section>
 
-        <section className="px-6 lg:px-10 xl:px-20">
-          <div className="mx-auto w-full max-w-[960px] rounded-2xl border border-hairline bg-surface shadow-[0_8px_32px_rgba(39,35,62,0.03)]">
+        <section className="px-5 lg:px-8 xl:px-12">
+          <div className="panel mx-auto w-full max-w-[960px]">
             {phase === "form" ? (
-              <form noValidate onSubmit={(event) => void submit(event)} className="grid grid-cols-1 gap-[22px] p-5 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-3 lg:p-8">
-                <div className="flex items-center justify-between lg:col-span-2 lg:mb-[14px]">
-                  <h2 className="text-[19px] tracking-[-0.4px] text-ink">Create your calendar</h2>
+              <form noValidate onSubmit={(event) => void submit(event)} className="grid grid-cols-1 gap-6 p-5 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-4 lg:p-6">
+                <div className="flex items-center justify-between lg:col-span-2">
+                  <h2 className="text-[15px] font-medium tracking-[-0.01em] text-ink">Create your calendar</h2>
                   <p className="hidden items-center gap-[7px] text-[12px] text-muted lg:flex">
                     <CalendarDays size={14} strokeWidth={1.75} aria-hidden />
                     PDF → .ics
@@ -184,8 +181,8 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
                   ) : null}
                 </div>
 
-                <div className="flex flex-col gap-[22px]">
-                  <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-4">
                     <TextField
                       id="course-name"
                       label="Course name"
@@ -226,8 +223,8 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
                           {[startError, endError].filter(Boolean).join(" ")}
                         </p>
                       ) : (
-                        <p className="mt-5 text-[12px] leading-[1.5] text-muted">
-                          Use the first and last day of your semester.
+                        <p className="mt-2 text-[12px] leading-[1.5] text-muted">
+                          Use the first and last instructional day of the term.
                         </p>
                       )}
                     </div>
@@ -237,7 +234,7 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
                       Generate calendar
                     </Button>
                     <p className="text-center text-[11px] leading-[1.5] text-muted lg:leading-normal">
-                      Add your PDF and course details to get started.
+                      You’ll review every date before anything is saved.
                     </p>
                   </div>
                 </div>
@@ -266,7 +263,7 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
             )}
           </div>
 
-          <div className="mx-auto flex max-w-[960px] flex-col items-center gap-2 py-[25px] text-center lg:flex-row lg:justify-center lg:gap-[10px] lg:pt-[22px] lg:pb-[30px]">
+          <div className="mx-auto flex max-w-[960px] flex-col items-center gap-1.5 py-6 text-center lg:flex-row lg:justify-center lg:gap-2 lg:py-7">
             <p className="text-[12px] text-muted">One file. Your favorite calendar.</p>
             <p className="text-[11px] font-medium whitespace-pre text-ink lg:text-[12px]">
               {"Google Calendar   ·   Apple Calendar   ·   Outlook"}
@@ -274,8 +271,7 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
           </div>
         </section>
         <HowItWorks />
-      </main>
-      <SiteFooter />
-    </div>
+      </div>
+    </PageShell>
   )
 }

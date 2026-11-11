@@ -1,5 +1,12 @@
 import { Check, Download, LoaderCircle, TriangleAlert, Upload } from "lucide-react"
+import { useEffect, useState } from "react"
 import { Button } from "./Button.tsx"
+
+const LOADING_STEPS = [
+  "Reading your syllabus",
+  "Finding assignments and exams",
+  "Checking dates against your term",
+]
 
 type ConversionStatusProps = {
   courseName: string
@@ -37,13 +44,13 @@ export function ConversionStatus(props: ConversionStatusProps) {
 
   return (
     <div
-      className="flex flex-col gap-5 p-6"
+      className="flex flex-col gap-4 p-6"
       role={props.phase === "error" ? "alert" : "status"}
       aria-live="polite"
       aria-busy={props.phase === "loading"}
     >
       <div className="flex items-center gap-3">
-        <span className={`flex size-10 shrink-0 items-center justify-center rounded-full ${symbolClass}`}>
+        <span className={`flex size-8 shrink-0 items-center justify-center rounded-md ${symbolClass}`}>
           {props.phase === "loading" ? (
             <LoaderCircle size={20} strokeWidth={1.75} className="animate-spin" aria-hidden />
           ) : props.phase === "success" ? (
@@ -52,7 +59,7 @@ export function ConversionStatus(props: ConversionStatusProps) {
             <TriangleAlert size={20} strokeWidth={1.75} aria-hidden />
           )}
         </span>
-        <h2 className="text-[18px] text-ink">{title}</h2>
+        <h2 className="text-[15px] font-medium text-ink">{title}</h2>
       </div>
       <p className="text-[13px] leading-[1.6] text-muted">
         {props.courseName}
@@ -64,13 +71,7 @@ export function ConversionStatus(props: ConversionStatusProps) {
         ) : null}
       </p>
       {props.phase === "loading" ? (
-        <div className="flex flex-col gap-2.5">
-          <p className="text-[12px] text-ink">Finding assignments and exams</p>
-          <div className="h-[5px] overflow-hidden rounded-[3px] bg-well">
-            <div className="progress-indeterminate h-[5px] rounded-[3px] bg-indigo" />
-          </div>
-          <p className="text-[12px] leading-[1.5] text-muted">This usually takes less than a minute.</p>
-        </div>
+        <LoadingCopy />
       ) : (
         <p className="text-[13px] leading-[1.55] text-muted">
           {props.phase === "success"
@@ -108,6 +109,25 @@ export function ConversionStatus(props: ConversionStatusProps) {
             ? "Start another course"
             : "Try this file again"}
       </button>
+    </div>
+  )
+}
+
+function LoadingCopy() {
+  const [step, setStep] = useState(0)
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setStep((current) => (current + 1) % LOADING_STEPS.length)
+    }, 2400)
+    return () => window.clearInterval(timer)
+  }, [])
+  return (
+    <div className="flex flex-col gap-2.5">
+      <p className="text-[13px] text-ink">{LOADING_STEPS[step]}</p>
+      <div className="h-[5px] overflow-hidden rounded-[3px] bg-well">
+        <div className="progress-indeterminate h-[5px] rounded-[3px] bg-indigo" />
+      </div>
+      <p className="text-[12px] leading-[1.5] text-muted">This usually takes less than a minute. You can cancel anytime.</p>
     </div>
   )
 }

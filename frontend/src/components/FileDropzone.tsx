@@ -120,7 +120,7 @@ export function FileDropzone({ file, problem, onFile }: FileDropzoneProps) {
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       onClick={() => inputRef.current?.click()}
-      className={`flex min-h-[210px] cursor-pointer flex-col items-center justify-center gap-[14px] rounded-lg border p-5 text-center lg:min-h-[246px] lg:p-7 ${zoneClass}`}
+      className={`flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border p-5 text-center lg:min-h-[200px] ${zoneClass}`}
     >
       <input
         ref={inputRef}
@@ -128,6 +128,7 @@ export function FileDropzone({ file, problem, onFile }: FileDropzoneProps) {
         name="file"
         type="file"
         accept="application/pdf,.pdf"
+        tabIndex={-1}
         className="sr-only"
         aria-describedby="syllabus-hint"
         onClick={(event) => event.stopPropagation()}
@@ -136,7 +137,7 @@ export function FileDropzone({ file, problem, onFile }: FileDropzoneProps) {
           event.target.value = ""
         }}
       />
-      <span className={`flex size-11 items-center justify-center rounded-[10px] ${wellClass}`}>
+      <span className={`flex size-9 items-center justify-center rounded-md ${wellClass}`}>
         {mode === "drag" ? (
           <ArrowDownToLine size={22} strokeWidth={1.75} aria-hidden />
         ) : mode === "ready" ? (
@@ -153,7 +154,11 @@ export function FileDropzone({ file, problem, onFile }: FileDropzoneProps) {
       </span>
       <button
         type="button"
-        className={`inline-flex items-center gap-[7px] rounded-md border bg-surface px-[14px] py-2 text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
+        onClick={(event) => {
+          event.stopPropagation()
+          inputRef.current?.click()
+        }}
+        className={`inline-flex items-center gap-1.5 rounded-md border bg-surface px-3 py-1.5 text-[12px] font-medium text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
           mode === "hover" || mode === "drag" ? "border-indigo-line" : "border-hairline"
         }`}
       >

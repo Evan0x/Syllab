@@ -85,7 +85,7 @@ export function AcademicCalendar({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex rounded-full border border-hairline bg-surface p-1" role="tablist" aria-label="Calendar view">
+        <div className="segmented" role="tablist" aria-label="Calendar view">
           {(["month", "week", "agenda"] as const).map((option) => (
             <button
               key={option}
@@ -93,9 +93,7 @@ export function AcademicCalendar({
               role="tab"
               aria-selected={view === option}
               onClick={() => setView(option)}
-              className={`rounded-full px-3 py-1.5 text-[12px] capitalize focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
-                view === option ? "bg-indigo text-white" : "text-muted hover:text-ink"
-              }`}
+              className="capitalize"
             >
               {option}
             </button>
@@ -109,7 +107,7 @@ export function AcademicCalendar({
             <button
               type="button"
               onClick={() => setCursor(parseIsoDate(today))}
-              className="rounded-full border border-hairline px-3 py-1.5 text-[12px] text-ink hover:border-indigo-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+              className="rounded-md border border-hairline px-3 py-1.5 text-[12px] text-ink hover:border-indigo-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
             >
               Today
             </button>
@@ -144,7 +142,7 @@ export function AcademicCalendar({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0">
           {filtered.length === 0 ? (
-            <p className="rounded-2xl border border-hairline bg-surface px-5 py-8 text-[13px] leading-[1.6] text-muted">
+            <p className="panel px-5 py-8 text-[13px] leading-5 text-muted">
               No events match these filters.
             </p>
           ) : view === "month" ? (
@@ -164,7 +162,7 @@ export function AcademicCalendar({
             <AgendaView events={filtered} today={today} onShowEvent={showEvent} />
           )}
         </div>
-        <aside className="rounded-2xl border border-hairline bg-surface p-5 shadow-[0_8px_32px_rgba(39,35,62,0.03)]">
+        <aside className="panel p-4">
           {selected ? (
             <EventDetail event={selected} onEdit={() => onEdit(selected)} onDelete={() => onDelete(selected)} onClose={() => setSelectedId(null)} />
           ) : openDay ? (
@@ -193,7 +191,7 @@ function MonthView({
 }) {
   const cells = monthCells(cursor)
   return (
-    <div className="overflow-hidden rounded-2xl border border-hairline bg-surface">
+    <div className="panel overflow-hidden">
       <div className="grid grid-cols-7 border-b border-hairline">
         {WEEKDAYS.map((day) => (
           <div key={day} className="px-2 py-2 text-center text-[10px] font-semibold tracking-[0.6px] text-muted uppercase">
@@ -210,14 +208,27 @@ function MonthView({
           return (
             <div
               key={iso}
-              className={`min-h-24 border-t border-r border-hairline p-1.5 last:border-r-0 sm:min-h-28 sm:p-2 [&:nth-child(7n)]:border-r-0 ${
+              className={`min-h-[4.5rem] border-t border-r border-hairline p-1.5 last:border-r-0 sm:min-h-28 sm:p-2 [&:nth-child(7n)]:border-r-0 ${
                 inMonth ? "bg-surface" : "bg-canvas"
               } ${iso === today ? "ring-1 ring-indigo ring-inset" : ""}`}
             >
               <p className={`text-[12px] ${iso === today ? "font-semibold text-indigo" : inMonth ? "text-ink" : "text-placeholder"}`}>
                 {date.getDate()}
               </p>
-              <ul className="mt-1 flex flex-col gap-1">
+              {items.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => onShowDay(iso)}
+                  className="mt-1 flex min-h-6 w-full flex-wrap items-center gap-0.5 sm:hidden"
+                  aria-label={`${items.length} events on ${iso}`}
+                >
+                  {items.slice(0, 4).map((event) => (
+                    <span key={event.id} className={`h-1.5 w-1.5 rounded-full ${dotClass(event.type)}`} />
+                  ))}
+                  {items.length > 4 ? <span className="text-[10px] text-muted">+{items.length - 4}</span> : null}
+                </button>
+              ) : null}
+              <ul className="mt-1 hidden flex-col gap-1 sm:flex">
                 {items.slice(0, DAY_LIMIT).map((event) => (
                   <li key={event.id}>
                     <EventChip event={event} onClick={() => onShowEvent(event)} />
@@ -228,7 +239,7 @@ function MonthView({
                 <button
                   type="button"
                   onClick={() => onShowDay(iso)}
-                  className="mt-1 text-[11px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+                  className="mt-1 hidden text-[11px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo sm:inline"
                 >
                   +{hidden} more
                 </button>
@@ -255,7 +266,7 @@ function WeekView({
   const start = weekStart(cursor)
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index))
   return (
-    <div className="overflow-x-auto rounded-2xl border border-hairline bg-surface">
+    <div className="panel overflow-x-auto">
       <div className="grid min-w-[720px] grid-cols-7">
         {days.map((date) => {
           const iso = isoDate(date)
@@ -267,19 +278,23 @@ function WeekView({
                 {date.getDate()}
               </h3>
               <ul className="mt-2 flex flex-col gap-2">
-                {items.map((event) => (
-                  <li key={event.id}>
-                    <button
-                      type="button"
-                      onClick={() => onShowEvent(event)}
-                      className="w-full rounded-lg border border-hairline px-2 py-2 text-left hover:border-indigo-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-                    >
-                      <span className={`mb-1 inline-block h-1.5 w-1.5 rounded-full ${dotClass(event.type)}`} />
-                      <span className="block text-[12px] leading-snug text-ink">{event.title}</span>
-                      <span className="mt-1 block text-[11px] text-muted">{formatTimeRange(event.time, event.endTime) ?? "All day"}</span>
-                    </button>
-                  </li>
-                ))}
+                {items.length === 0 ? (
+                  <li className="text-[11px] text-placeholder">No events</li>
+                ) : (
+                  items.map((event) => (
+                    <li key={event.id}>
+                      <button
+                        type="button"
+                        onClick={() => onShowEvent(event)}
+                        className="w-full rounded-md border border-hairline px-2 py-2 text-left hover:border-indigo-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+                      >
+                        <span className={`mb-1 inline-block h-1.5 w-1.5 rounded-full ${dotClass(event.type)}`} />
+                        <span className="block text-[12px] leading-snug text-ink">{event.title}</span>
+                        <span className="mt-1 block text-[11px] text-muted">{formatTimeRange(event.time, event.endTime) ?? "All day"}</span>
+                      </button>
+                    </li>
+                  ))
+                )}
               </ul>
             </section>
           )
@@ -300,7 +315,7 @@ function AgendaView({
 }) {
   const groups = groupAgenda(events)
   return (
-    <div className="overflow-hidden rounded-2xl border border-hairline bg-surface">
+    <div className="panel overflow-hidden">
       {groups.map((group) => (
         <section key={group.date}>
           <h3 className={`border-b border-hairline px-4 py-3 text-[13px] ${group.date === today ? "text-indigo" : "text-ink"}`}>
@@ -347,12 +362,12 @@ function EventDetail({
   return (
     <div>
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[10px] font-semibold tracking-[0.8px] text-muted uppercase">{event.courseName || "Course"}</p>
+        <p className="text-[11px] font-medium text-muted">{event.courseName || "Course"}</p>
         <button type="button" onClick={onClose} className="text-[12px] text-muted hover:text-ink">
           Close
         </button>
       </div>
-      <h2 className="mt-2 text-[18px] leading-snug tracking-[-0.3px] text-ink">{event.title}</h2>
+      <h2 className="mt-2 text-[15px] leading-snug font-medium tracking-[-0.01em] text-ink">{event.title}</h2>
       <dl className="mt-4 flex flex-col gap-3">
         <Detail label="Deadline" value={formatLongDate(event.date)} />
         <Detail label="Type" value={formatType(event.type)} />
@@ -362,15 +377,23 @@ function EventDetail({
       </dl>
       {quote ? (
         <div className="mt-4">
-          <p className="text-[10px] font-semibold tracking-[0.8px] text-muted uppercase">Source quote</p>
+          <p className="text-[11px] font-medium text-muted">Source quote</p>
           <p className="mt-1 border-l-2 border-indigo-line pl-3 text-[12px] leading-[1.55] text-muted">{quote}</p>
         </div>
       ) : null}
-      <div className="mt-5 flex gap-4">
-        <button type="button" onClick={onEdit} className="text-[12px] text-indigo">
+      <div className="mt-5 flex gap-3">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="h-8 rounded-md border border-hairline px-3 text-[13px] text-indigo hover:border-indigo-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+        >
           Edit
         </button>
-        <button type="button" onClick={onDelete} className="text-[12px] text-error">
+        <button
+          type="button"
+          onClick={onDelete}
+          className="h-8 rounded-md px-3 text-[13px] text-error hover:bg-error-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+        >
           Delete
         </button>
       </div>
@@ -434,12 +457,12 @@ function Filter({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="flex min-w-36 flex-col gap-1 text-[10px] font-semibold tracking-[0.6px] text-muted uppercase">
+    <label className="flex min-w-36 flex-col gap-1.5 text-[11px] font-medium text-muted">
       {label}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-10 rounded-lg border border-hairline bg-surface px-2 text-[13px] font-normal tracking-normal text-ink normal-case focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+        className="control font-normal text-ink"
       >
         {options.map(([option, text]) => (
           <option key={option} value={option}>
@@ -458,7 +481,7 @@ function NavButton({ label, onClick, forward = false }: { label: string; onClick
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex size-8 items-center justify-center rounded-full border border-hairline text-ink hover:border-indigo-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+      className="flex size-8 items-center justify-center rounded-md border border-hairline text-ink hover:border-indigo-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
     >
       <Icon size={16} strokeWidth={1.75} aria-hidden />
     </button>
@@ -468,7 +491,7 @@ function NavButton({ label, onClick, forward = false }: { label: string; onClick
 function Detail({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
-      <dt className="text-[10px] font-semibold tracking-[0.8px] text-muted uppercase">{label}</dt>
+      <dt className="text-[11px] font-medium text-muted">{label}</dt>
       <dd className={`mt-0.5 text-[13px] ${value ? "text-ink" : "text-placeholder"}`}>{value ?? "Not specified"}</dd>
     </div>
   )

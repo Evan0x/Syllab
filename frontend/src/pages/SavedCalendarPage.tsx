@@ -1,15 +1,21 @@
+import { CalendarDays, LoaderCircle, TriangleAlert, Upload } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { deleteEvent, listEvents, updateEvent } from "../api/events.ts"
 import type { StoredEvent } from "../api/events.ts"
 import { SyllabusApiError } from "../api/syllabus.ts"
+import { Button } from "../components/Button.tsx"
 import { AcademicCalendar } from "../components/calendar/AcademicCalendar.tsx"
 import type { CalendarItem } from "../components/calendar/AcademicCalendar.tsx"
+import { ConfirmDialog } from "../components/ConfirmDialog.tsx"
+import { EmptyState } from "../components/EmptyState.tsx"
 import { EventEditor } from "../components/EventEditor.tsx"
 import type { EventFields } from "../components/EventEditor.tsx"
-import { SiteFooter } from "../components/SiteFooter.tsx"
-import { SiteHeader } from "../components/SiteHeader.tsx"
+import { PageHeader } from "../components/PageHeader.tsx"
+import { PageShell } from "../components/PageShell.tsx"
+import { usePageTitle } from "../lib/pageTitle.ts"
 
 export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout: () => void }) {
+  usePageTitle("Calendar · Syllapin")
   const [events, setEvents] = useState<CalendarItem[] | null>(null)
   const [error, setError] = useState<string>()
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -17,21 +23,29 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
   const [actionError, setActionError] = useState<string>()
   const request = useRef(0)
 
-  useEffect(() => {
+  function load() {
     const token = ++request.current
-    listEvents()
-      .then((loaded) => {
-        if (token === request.current) {
-          setEvents(loaded.map(toCalendarItem))
-          setError(undefined)
-        }
-      })
-      .catch((caught) => {
-        if (token === request.current) {
-          setEvents([])
-          setError(caught instanceof SyllabusApiError ? caught.message : "Could not load the calendar")
-        }
-      })
+    setError(undefined)
+    setEvents(null)
+    void fetchEvents(token)
+  }
+
+  async function fetchEvents(token: number) {
+    try {
+      const loaded = await listEvents()
+      if (token === request.current) {
+        setEvents(loaded.map(toCalendarItem))
+      }
+    } catch (caught) {
+      if (token === request.current) {
+        setEvents([])
+        setError(caught instanceof SyllabusApiError ? caught.message : "Could not load the calendar")
+      }
+    }
+  }
+
+  useEffect(() => {
+    void fetchEvents(++request.current)
   }, [])
 
   const editing = events?.find((event) => event.id === editingId)
@@ -67,64 +81,60 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
   }
 
   return (
-    <div className="bg-canvas text-ink">
-      <SiteHeader email={email} onLogout={onLogout} />
-      <main className="px-6 pt-9 pb-16 lg:px-10 lg:pt-[53px] xl:px-20">
-        <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6">
-          <header className="flex flex-col items-start gap-4">
-            <p className="text-[10px] font-semibold tracking-[1.2px] text-indigo lg:text-[11px] lg:tracking-[1.7px]">
-              YOUR CALENDAR
-            </p>
-            <div className="flex flex-col gap-2">
-              <h1 className="font-serif text-[49px] leading-[1.06] italic tracking-[-1.4px] text-ink lg:text-[68px] lg:leading-[1.1] lg:tracking-[-2px]">
-                Saved events
-              </h1>
-              <p className="text-[15px] leading-[1.5] text-muted lg:text-[16px]">
-                Confirmed dates from the syllabi you have reviewed.
-              </p>
+    <PageShell email={email} onLogout={onLogout}>
+      <PageHeader
+        eyebrow="Calendar"
+        title="Your saved dates"
+        description="Confirmed events from syllabi you have reviewed. Edit anything that needs a second look."
+      />
+      {events === null ? (
+        <EmptyState
+          icon={LoaderCircle}
+          tone="loading"
+          title="Loading your calendar"
+          message="Pulling confirmed dates from the courses you’ve reviewed."
+        />
+      ) : error ? (
+        <EmptyState
+          icon={TriangleAlert}
+          tone="error"
+          title="The calendar couldn’t load"
+          message={error}
+          action={
+            <div className="w-full max-w-xs">
+              <Button onClick={load}>Try again</Button>
             </div>
-            <div className="flex flex-wrap gap-4">
-              <a
-                href="/workload"
-                className="text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-              >
-                See workload
-              </a>
-              <a
-                href="/"
-                className="text-[12px] text-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-              >
+          }
+        />
+      ) : events.length === 0 ? (
+        <EmptyState
+          icon={CalendarDays}
+          title="No saved events yet"
+          message="Review a syllabus and open its calendar view to keep the dates here."
+          action={
+            <a href="/" className="inline-flex">
+              <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo px-4 text-[13px] font-medium text-white hover:bg-indigo-deep">
+                <Upload size={17} strokeWidth={1.75} aria-hidden />
                 Upload a syllabus
-              </a>
-            </div>
-          </header>
-          {events === null ? (
-            <p className="rounded-2xl border border-hairline bg-surface px-5 py-8 text-[13px] text-muted">Loading your calendar…</p>
-          ) : error ? (
-            <p role="alert" className="rounded-2xl border border-hairline bg-error-soft px-5 py-8 text-[13px] text-error">
-              {error}
-            </p>
-          ) : events.length === 0 ? (
-            <p className="rounded-2xl border border-hairline bg-surface px-5 py-8 text-[13px] leading-[1.6] text-muted">
-              No saved events yet. Review a syllabus and open its calendar to keep the dates here.
-            </p>
-          ) : (
-            <AcademicCalendar
-              events={events}
-              onEdit={(event) => {
-                setActionError(undefined)
-                setEditingId(event.id)
-              }}
-              onDelete={(event) => setPendingDeleteId(event.id)}
-            />
-          )}
-          {actionError ? (
-            <p role="alert" className="text-[12px] leading-[1.45] text-error">
-              {actionError}
-            </p>
-          ) : null}
-        </div>
-      </main>
+              </span>
+            </a>
+          }
+        />
+      ) : (
+        <AcademicCalendar
+          events={events}
+          onEdit={(event) => {
+            setActionError(undefined)
+            setEditingId(event.id)
+          }}
+          onDelete={(event) => setPendingDeleteId(event.id)}
+        />
+      )}
+      {actionError ? (
+        <p role="alert" className="text-[12px] leading-[1.45] text-error">
+          {actionError}
+        </p>
+      ) : null}
       {editing ? (
         <EventEditor
           heading="Edit event"
@@ -145,16 +155,17 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
         />
       ) : null}
       {pendingDelete ? (
-        <ConfirmDelete
-          title={pendingDelete.title}
+        <ConfirmDialog
+          title="Delete this event?"
+          message={`${pendingDelete.title} will be removed from your calendar.`}
+          confirmLabel="Delete event"
           onCancel={() => setPendingDeleteId(null)}
           onConfirm={() => {
             void confirmDelete()
           }}
         />
       ) : null}
-      <SiteFooter />
-    </div>
+    </PageShell>
   )
 }
 
@@ -172,52 +183,4 @@ function toCalendarItem(event: StoredEvent): CalendarItem {
     confidence: event.confidence,
     sourceQuote: event.sourceQuote,
   }
-}
-
-function ConfirmDelete({ title, onCancel, onConfirm }: { title: string; onCancel: () => void; onConfirm: () => void }) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
-
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) {
-      return
-    }
-    dialog.showModal()
-    return () => dialog.close()
-  }, [])
-
-  return (
-    <dialog
-      ref={dialogRef}
-      className="review-dialog w-full max-w-[420px]"
-      aria-labelledby="saved-delete-title"
-      onCancel={(event) => {
-        event.preventDefault()
-        onCancel()
-      }}
-    >
-      <div className="flex flex-col gap-4 rounded-2xl border border-hairline bg-surface p-5 shadow-[0_8px_32px_rgba(39,35,62,0.08)] sm:p-6">
-        <h2 id="saved-delete-title" className="text-[18px] tracking-[-0.3px] text-ink">
-          Delete this event?
-        </h2>
-        <p className="text-[13px] leading-[1.6] text-muted">{title} will be removed from your calendar.</p>
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="h-12 rounded-lg px-4 text-[14px] text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="h-12 rounded-lg bg-error px-5 text-[14px] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
-          >
-            Delete event
-          </button>
-        </div>
-      </div>
-    </dialog>
-  )
 }
