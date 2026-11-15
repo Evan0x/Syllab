@@ -70,7 +70,7 @@ export default function App() {
   if (account === undefined) {
     return (
       <div className="min-h-screen bg-canvas">
-        <div className="site-header h-14 border-b border-hairline" />
+        <div className="site-header h-[83px] border-b border-hairline" />
         <div className="mx-auto w-full max-w-[960px] px-5 pt-10">
           <div className="h-3 w-16 rounded bg-well" />
           <div className="mt-3 h-6 w-48 rounded bg-well" />

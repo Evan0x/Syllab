@@ -23,7 +23,7 @@ export function SiteHeader({ onHome, email, onLogout, logoHref = "/", reviewing 
 
   return (
     <header className="site-header border-b border-hairline">
-      <div className="flex h-14 items-center justify-between gap-x-4 px-5 lg:px-8 xl:px-12">
+      <div className="flex h-[83px] items-center justify-between gap-x-4 px-5 lg:px-8 xl:px-12">
         {onHome ? (
           <button type="button" onClick={onHome} className={`${logoClass} cursor-pointer border-0 bg-transparent p-0 text-left`}>
             <BrandLockup />
@@ -34,44 +34,96 @@ export function SiteHeader({ onHome, email, onLogout, logoHref = "/", reviewing 
           </a>
         )}
         {email ? (
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <nav aria-label="Primary" className="hidden items-center gap-0.5 text-[13px] sm:flex">
-              <NavLinks path={path} addingCourse={addingCourse} />
+          <div className="flex min-w-0 items-center gap-4">
+            {/* Desktop/tablet nav: all links + Add course button */}
+            <nav aria-label="Primary" className="hidden items-center gap-6 text-[13px] sm:flex">
+              <DesktopNavLinks path={path} addingCourse={addingCourse} />
             </nav>
+            {/* Mobile: show Add course button in main bar when not already there */}
+            {!addingCourse ? (
+              <a
+                href="/upload"
+                className="inline-flex shrink-0 items-center rounded-md border border-hairline bg-surface px-4 py-2.5 text-[13px] font-medium text-ink hover:border-indigo-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo sm:hidden"
+              >
+                + Add course
+              </a>
+            ) : null}
             {onLogout ? <AccountMenu email={email} onLogout={onLogout} /> : null}
           </div>
         ) : null}
       </div>
+      {/* Mobile nav row: Calendar / Workload / Advisor (+ Add course when active) */}
       {email ? (
         <nav aria-label="Primary" className="flex gap-0.5 overflow-x-auto border-t border-hairline px-3 py-1.5 text-[13px] sm:hidden">
-          <NavLinks path={path} addingCourse={addingCourse} />
+          <MobileNavLinks path={path} addingCourse={addingCourse} />
         </nav>
       ) : null}
     </header>
   )
 }
 
-function NavLinks({ path, addingCourse }: { path: string; addingCourse: boolean }) {
+function DesktopNavLinks({ path, addingCourse }: { path: string; addingCourse: boolean }) {
   return (
     <>
       {productNav.map((item) => {
-        const current = !addingCourse && item.match.some((match) => (match === "/" ? path === "/" || path === "/calendar" : path === match))
+        const current = !addingCourse && item.match.some((match) =>
+          match === "/" ? path === "/" || path === "/calendar" : path === match
+        )
         return (
-          <a key={item.href} href={item.href} aria-current={current ? "page" : undefined} className={navClass(current)}>
+          <a key={item.href} href={item.href} aria-current={current ? "page" : undefined}
+             className={desktopNavClass(current)}>
             {item.label}
           </a>
         )
       })}
-      <a href="/upload" aria-current={addingCourse ? "page" : undefined} className={navClass(addingCourse)}>
-        Add course
-      </a>
+      {addingCourse ? (
+        <span className={desktopNavClass(true)} aria-current="page">Add course</span>
+      ) : (
+        <a
+          href="/upload"
+          className="inline-flex shrink-0 items-center rounded-md border border-hairline bg-surface px-4 py-2.5 font-medium text-ink hover:border-indigo-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+        >
+          + Add course
+        </a>
+      )}
     </>
   )
 }
 
-function navClass(current: boolean) {
+function MobileNavLinks({ path, addingCourse }: { path: string; addingCourse: boolean }) {
+  return (
+    <>
+      {productNav.map((item) => {
+        const current = !addingCourse && item.match.some((match) =>
+          match === "/" ? path === "/" || path === "/calendar" : path === match
+        )
+        return (
+          <a key={item.href} href={item.href} aria-current={current ? "page" : undefined}
+             className={mobileNavClass(current)}>
+            {item.label}
+          </a>
+        )
+      })}
+      {addingCourse ? (
+        <a href="/upload" aria-current="page" className={mobileNavClass(true)}>
+          Add course
+        </a>
+      ) : null}
+    </>
+  )
+}
+
+function desktopNavClass(current: boolean) {
+  return `shrink-0 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
+    current
+      ? "bg-indigo-soft px-3 py-2 font-semibold text-indigo"
+      : "py-2 font-medium text-muted hover:text-ink"
+  }`
+}
+
+function mobileNavClass(current: boolean) {
   return `shrink-0 rounded-md px-2.5 py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo ${
-    current ? "bg-well font-medium text-ink" : "text-muted hover:bg-well hover:text-ink"
+    current ? "bg-indigo-soft font-semibold text-indigo" : "text-muted hover:text-ink"
   }`
 }
 
