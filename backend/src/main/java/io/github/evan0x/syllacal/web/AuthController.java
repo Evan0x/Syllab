@@ -166,6 +166,41 @@ public class AuthController {
 	public record RegisteredAccount(UUID id, String email, String verificationCode) {
 	}
 
+	@PostMapping("/api/auth/upgrade")
+	public ResponseEntity<?> upgrade(
+			@RequestBody RegisterRequest request,
+			HttpServletRequest httpRequest) {
+		AccountUser user;
+		try {
+			user = MeController.currentUser();
+		} catch (SyllabusRequestException e) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError("Authentication required"));
+		}
+		if (!user.isGuest()) {
+			return ResponseEntity.badRequest().body(new ApiError("Account is already registered"));
+		}
+		String email = Emails.normalize(request.email());
+		if (email.isEmpty() || !email.contains("@") || email.contains(" ")) {
+			return ResponseEntity.badRequest().body(new ApiError("Enter an email address"));
+		}
+		String password = request.password() == null ? "" : request.password();
+		if (password.length() < 10) {
+			return ResponseEntity.badRequest().body(new ApiError("Password must be at least 10 characters"));
+		}
+		if (accounts.findByEmail(email).isPresent()) {
+			return ResponseEntity.badRequest().body(new ApiError(ACCOUNT_NOT_CREATED));
+		}
+		accounts.upgradeGuest(user.id(), email, passwordEncoder.encode(password));
+		String code = verificationCodes.issue(user.id());
+		verificationCodeMail.send(email, code);
+		jakarta.servlet.http.HttpSession session = httpRequest.getSession(false);
+		if (session != null) {
+			session.invalidate();
+		}
+		securityContextHolderStrategy.clearContext();
+		return ResponseEntity.noContent().build();
+	}
+
 	public record AccountView(UUID id, String email) {
 	}
 }

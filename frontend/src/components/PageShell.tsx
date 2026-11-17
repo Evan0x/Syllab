@@ -9,6 +9,7 @@ export function PageShell({
   logoHref,
   reviewing = false,
   contained = true,
+  isGuest = false,
   children,
 }: {
   email: string
@@ -17,6 +18,7 @@ export function PageShell({
   logoHref?: string
   reviewing?: boolean
   contained?: boolean
+  isGuest?: boolean
   children: ReactNode
 }) {
   return (
@@ -24,7 +26,7 @@ export function PageShell({
       <a href="#main" className="skip-link">
         Skip to content
       </a>
-      <SiteHeader email={email} onLogout={onLogout} onHome={onHome} logoHref={logoHref} reviewing={reviewing} />
+      <SiteHeader email={email} onLogout={onLogout} onHome={onHome} logoHref={logoHref} reviewing={reviewing} isGuest={isGuest} />
       <main id="main" className={contained ? "px-5 pt-8 pb-16 lg:px-8 lg:pt-10 xl:px-12" : undefined}>
         {contained ? <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6">{children}</div> : children}
       </main>

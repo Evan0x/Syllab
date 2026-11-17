@@ -14,12 +14,16 @@ public final class AccountUser implements UserDetails {
 	private final String email;
 	private final String passwordHash;
 	private final boolean emailVerified;
+	private final boolean isGuest;
+	private final int trialsUsed;
 
-	public AccountUser(UUID id, String email, String passwordHash, boolean emailVerified) {
+	public AccountUser(UUID id, String email, String passwordHash, boolean emailVerified, boolean isGuest, int trialsUsed) {
 		this.id = id;
 		this.email = email;
 		this.passwordHash = passwordHash;
 		this.emailVerified = emailVerified;
+		this.isGuest = isGuest;
+		this.trialsUsed = trialsUsed;
 	}
 
 	public UUID id() {
@@ -34,8 +38,16 @@ public final class AccountUser implements UserDetails {
 		return emailVerified;
 	}
 
+	public boolean isGuest() {
+		return isGuest;
+	}
+
+	public int trialsUsed() {
+		return trialsUsed;
+	}
+
 	public AccountUser withoutSecret() {
-		return new AccountUser(id, email, null, emailVerified);
+		return new AccountUser(id, email, null, emailVerified, isGuest, trialsUsed);
 	}
 
 	@Override

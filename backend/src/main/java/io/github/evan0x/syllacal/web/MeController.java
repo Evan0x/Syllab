@@ -23,7 +23,7 @@ public class MeController {
 	@GetMapping("/api/me")
 	public AccountView me() {
 		AccountUser user = currentUser();
-		return new AccountView(user.id(), user.email());
+		return new AccountView(user.id(), user.email(), user.isGuest(), user.trialsUsed());
 	}
 
 	@DeleteMapping("/api/me")
@@ -46,6 +46,6 @@ public class MeController {
 		return user;
 	}
 
-	public record AccountView(java.util.UUID id, String email) {
+	public record AccountView(java.util.UUID id, String email, boolean isGuest, int trialsUsed) {
 	}
 }

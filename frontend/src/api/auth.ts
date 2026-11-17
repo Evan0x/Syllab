@@ -3,6 +3,8 @@ import { apiFetch } from "./http.ts"
 export type Account = {
   id: string
   email: string
+  isGuest: boolean
+  trialsUsed: number
 }
 
 export class AuthError extends Error {
@@ -68,6 +70,25 @@ export async function logoutAccount(): Promise<void> {
   }
 }
 
+export async function startGuestSession(): Promise<Account> {
+  const response = await apiFetch("/api/guest/session", { method: "POST" })
+  if (!response.ok) {
+    throw new AuthError(await readMessage(response, "Could not start guest session"), response.status)
+  }
+  return readAccount(response)
+}
+
+export async function upgradeGuest(input: { email: string; password: string }): Promise<void> {
+  const response = await apiFetch("/api/auth/upgrade", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })
+  if (!response.ok) {
+    throw new AuthError(await readMessage(response, "Could not create your account"), response.status)
+  }
+}
+
 async function readAccount(response: Response): Promise<Account> {
   const data: unknown = await response.json()
   if (
@@ -78,7 +99,9 @@ async function readAccount(response: Response): Promise<Account> {
     typeof data.id === "string" &&
     typeof data.email === "string"
   ) {
-    return { id: data.id, email: data.email }
+    const isGuest = "isGuest" in data && typeof data.isGuest === "boolean" ? data.isGuest : false
+    const trialsUsed = "trialsUsed" in data && typeof data.trialsUsed === "number" ? data.trialsUsed : 0
+    return { id: data.id, email: data.email, isGuest, trialsUsed }
   }
   throw new AuthError("Could not load your account", response.status)
 }

@@ -27,6 +27,8 @@ type LandingPageProps = {
   onLogout: () => void
   existingCourse?: ExistingCourse | null
   onPreview: (preview: PreviewResponse, term: { termStart: string; termEnd: string }, existingCourseId?: string) => void
+  isGuest?: boolean
+  trialsUsed?: number
 }
 
 const MISSING_FILE = "No file selected. Upload a syllabus PDF before generating your calendar."
@@ -34,7 +36,7 @@ const MISSING_COURSE = "Enter a course name to label your events."
 const MISSING_START = "Enter the first day of your semester."
 const MISSING_END = "Enter the last day of your semester."
 
-export function LandingPage({ email, onLogout, existingCourse, onPreview }: LandingPageProps) {
+export function LandingPage({ email, onLogout, existingCourse, onPreview, isGuest = false, trialsUsed = 0 }: LandingPageProps) {
   usePageTitle("Upload syllabus · Syllapin")
   const [file, setFile] = useState<File | null>(null)
   const [problem, setProblem] = useState<FileProblem | null>(null)
@@ -142,7 +144,7 @@ export function LandingPage({ email, onLogout, existingCourse, onPreview }: Land
   }
 
   return (
-    <PageShell email={email} onLogout={onLogout} logoHref="#top" contained={false}>
+    <PageShell email={email} onLogout={onLogout} logoHref="#top" contained={false} isGuest={isGuest}>
       <div id="top">
         <section className="flex flex-col items-start gap-3 px-5 pt-10 pb-6 lg:items-center lg:gap-4 lg:px-8 lg:pt-14 lg:pb-8 xl:px-12">
           <p className="text-[11px] font-medium tracking-[0.12em] text-muted uppercase">
@@ -173,10 +175,16 @@ export function LandingPage({ email, onLogout, existingCourse, onPreview }: Land
                   <h2 className="text-[15px] font-medium tracking-[-0.01em] text-ink">
                     {existingCourse ? `Replace syllabus for ${existingCourse.courseName}` : "Create your calendar"}
                   </h2>
-                  <p className="hidden items-center gap-[7px] text-[12px] text-muted lg:flex">
-                    <CalendarDays size={14} strokeWidth={1.75} aria-hidden />
-                    PDF → .ics
-                  </p>
+                  {isGuest ? (
+                    <span className="text-[12px] text-muted">
+                      {Math.max(0, 2 - trialsUsed)} free {Math.max(0, 2 - trialsUsed) === 1 ? "preview" : "previews"} remaining
+                    </span>
+                  ) : (
+                    <p className="hidden items-center gap-[7px] text-[12px] text-muted lg:flex">
+                      <CalendarDays size={14} strokeWidth={1.75} aria-hidden />
+                      PDF → .ics
+                    </p>
+                  )}
                 </div>
                 {existingCourse ? (
                   <p className="text-[12px] leading-[1.5] text-muted lg:col-span-2">

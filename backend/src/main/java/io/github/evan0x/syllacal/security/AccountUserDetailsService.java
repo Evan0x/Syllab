@@ -19,7 +19,8 @@ public class AccountUserDetailsService implements UserDetailsService {
 		String email = Emails.normalize(username);
 		return accounts.findByEmail(email)
 				.map(account -> new AccountUser(
-						account.id(), account.email(), account.passwordHash(), account.emailVerified()))
+						account.id(), account.email(), account.passwordHash(), account.emailVerified(),
+						account.isGuest(), account.trialsUsed()))
 				.orElseThrow(() -> new UsernameNotFoundException("No account"));
 	}
 }

@@ -7,6 +7,8 @@ import io.github.evan0x.syllacal.extraction.EventExtractor;
 import io.github.evan0x.syllacal.extraction.ExtractedEvent;
 import io.github.evan0x.syllacal.pdf.PdfTextExtractor;
 import io.github.evan0x.syllacal.pdf.ScannedPdfException;
+import io.github.evan0x.syllacal.security.AccountRepository;
+import io.github.evan0x.syllacal.security.AccountUser;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -47,16 +49,19 @@ public class SyllabusController {
 	private final EventExtractor eventExtractor;
 	private final EventValidator eventValidator;
 	private final IcsBuilder icsBuilder;
+	private final AccountRepository accounts;
 
 	public SyllabusController(
 			PdfTextExtractor pdfTextExtractor,
 			EventExtractor eventExtractor,
 			EventValidator eventValidator,
-			IcsBuilder icsBuilder) {
+			IcsBuilder icsBuilder,
+			AccountRepository accounts) {
 		this.pdfTextExtractor = pdfTextExtractor;
 		this.eventExtractor = eventExtractor;
 		this.eventValidator = eventValidator;
 		this.icsBuilder = icsBuilder;
+		this.accounts = accounts;
 	}
 
 	/**
@@ -119,6 +124,14 @@ public class SyllabusController {
 			@RequestParam("termStart") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate termStart,
 			@RequestParam("termEnd") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate termEnd)
 			throws ScannedPdfException, IOException {
+		org.springframework.security.core.Authentication auth =
+				org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+		AccountUser user = (auth != null && auth.getPrincipal() instanceof AccountUser u) ? u : null;
+		if (user != null && user.isGuest() && user.trialsUsed() >= 2) {
+			throw new SyllabusRequestException(HttpStatus.PAYMENT_REQUIRED,
+					"Trial limit reached. Create a free account to continue.");
+		}
+
 		String course = requireCourseName(courseName);
 		requireTerm(termStart, termEnd);
 		byte[] pdf = requirePdf(file);
@@ -145,6 +158,10 @@ public class SyllabusController {
 						event.confidence(),
 						event.sourceText()))
 				.toList();
+
+		if (user != null && user.isGuest()) {
+			accounts.incrementTrialsUsed(user.id());
+		}
 
 		return ResponseEntity.ok(new PreviewResponse(course, events, validated.warnings()));
 	}

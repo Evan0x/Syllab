@@ -7,6 +7,7 @@ type SiteHeaderProps = {
   onLogout?: () => void
   logoHref?: string
   reviewing?: boolean
+  isGuest?: boolean
 }
 
 const productNav = [
@@ -15,7 +16,7 @@ const productNav = [
   { href: "/advisor", label: "Advisor", match: ["/advisor"] },
 ] as const
 
-export function SiteHeader({ onHome, email, onLogout, logoHref = "/", reviewing = false }: SiteHeaderProps) {
+export function SiteHeader({ onHome, email, onLogout, logoHref = "/", reviewing = false, isGuest = false }: SiteHeaderProps) {
   const logoClass =
     "flex items-center gap-[9px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
   const path = window.location.pathname.replace(/\/+$/, "") || "/"
@@ -48,7 +49,12 @@ export function SiteHeader({ onHome, email, onLogout, logoHref = "/", reviewing 
                 + Add course
               </a>
             ) : null}
-            {onLogout ? <AccountMenu email={email} onLogout={onLogout} /> : null}
+            {isGuest ? (
+              <span className="shrink-0 rounded-full bg-indigo-soft px-2.5 py-1 text-[11px] font-medium text-indigo">
+                Guest
+              </span>
+            ) : null}
+            {onLogout ? <AccountMenu email={email} onLogout={onLogout} isGuest={isGuest} /> : null}
           </div>
         ) : null}
       </div>
@@ -127,7 +133,7 @@ function mobileNavClass(current: boolean) {
   }`
 }
 
-function AccountMenu({ email, onLogout }: { email: string; onLogout: () => void }) {
+function AccountMenu({ email, onLogout, isGuest }: { email: string; onLogout: () => void; isGuest?: boolean }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -177,7 +183,18 @@ function AccountMenu({ email, onLogout }: { email: string; onLogout: () => void 
           aria-label="Account"
           className="absolute right-0 mt-2 w-56 rounded-lg border border-hairline bg-surface p-1.5 shadow-float"
         >
-          <p className="break-all px-3 py-2 text-[12px] leading-5 text-muted">{email}</p>
+          <p className="break-all px-3 py-2 text-[12px] leading-5 text-muted">
+            {isGuest ? "Guest account" : email}
+          </p>
+          {isGuest ? (
+            <a
+              href="/"
+              role="menuitem"
+              className="flex w-full rounded-lg px-3 py-2 text-left text-[13px] font-medium text-indigo hover:bg-well focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
+            >
+              Save your work →
+            </a>
+          ) : null}
           <button
             ref={firstItemRef}
             type="button"
@@ -185,7 +202,7 @@ function AccountMenu({ email, onLogout }: { email: string; onLogout: () => void 
             onClick={onLogout}
             className="flex w-full rounded-lg px-3 py-2 text-left text-[13px] text-ink hover:bg-well focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo"
           >
-            Log out
+            {isGuest ? "Sign out" : "Log out"}
           </button>
         </div>
       ) : null}

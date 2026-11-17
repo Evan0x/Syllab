@@ -16,7 +16,7 @@ import { PageShell } from "../components/PageShell.tsx"
 import { formatLongDate, formatTimeRange, isoDate, saturdayOfWeek } from "../lib/dates.ts"
 import { usePageTitle } from "../lib/pageTitle.ts"
 
-export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout: () => void }) {
+export function SavedCalendarPage({ email, onLogout, isGuest = false }: { email: string; onLogout: () => void; isGuest?: boolean }) {
   usePageTitle("Calendar · Syllapin")
   const [events, setEvents] = useState<CalendarItem[] | null>(null)
   const [error, setError] = useState<string>()
@@ -90,7 +90,7 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
   }
 
   return (
-    <PageShell email={email} onLogout={onLogout}>
+    <PageShell email={email} onLogout={onLogout} isGuest={isGuest}>
       <PageHeader
         eyebrow="Calendar"
         title="What’s coming up"

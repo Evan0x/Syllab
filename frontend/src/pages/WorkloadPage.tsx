@@ -13,7 +13,7 @@ import { usePageTitle } from "../lib/pageTitle.ts"
 
 type Range = "week" | "four" | "semester"
 
-export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () => void }) {
+export function WorkloadPage({ email, onLogout, isGuest = false }: { email: string; onLogout: () => void; isGuest?: boolean }) {
   usePageTitle("Workload · Syllapin")
   const [report, setReport] = useState<WorkloadReport | null>(null)
   const [error, setError] = useState<string>()
@@ -56,7 +56,7 @@ export function WorkloadPage({ email, onLogout }: { email: string; onLogout: () 
   const empty = report !== null && report.courses.length === 0 && report.semesterStart === null
 
   return (
-    <PageShell email={email} onLogout={onLogout}>
+    <PageShell email={email} onLogout={onLogout} isGuest={isGuest}>
           <PageHeader
             eyebrow="Workload"
             title="Where the pressure is"

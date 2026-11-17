@@ -3,9 +3,11 @@ package io.github.evan0x.syllacal.web;
 import io.github.evan0x.syllacal.calendar.EventValidator;
 import io.github.evan0x.syllacal.calendar.IcsBuilder;
 import io.github.evan0x.syllacal.pdf.PdfTextExtractor;
+import io.github.evan0x.syllacal.security.AccountRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -33,6 +35,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 		SyllabusControllerTest.FakeExtractor.class
 })
 class SyllabusExportTest {
+
+	@MockitoBean
+	private AccountRepository accountRepository;
 
 	@Autowired
 	private MockMvc mockMvc;

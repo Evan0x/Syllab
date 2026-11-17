@@ -36,6 +36,7 @@ type ReviewCalendarPageProps = {
   email: string
   onLogout: () => void
   onBack: () => void
+  isGuest?: boolean
 }
 
 type ReviewEvent = CalendarEvent & {
@@ -51,7 +52,7 @@ type EventGroup = {
 
 const MISSING = "Not specified"
 
-export function ReviewCalendarPage({ preview, term, existingCourseId, email, onLogout, onBack }: ReviewCalendarPageProps) {
+export function ReviewCalendarPage({ preview, term, existingCourseId, email, onLogout, onBack, isGuest = false }: ReviewCalendarPageProps) {
   usePageTitle(`${preview?.courseName || "Calendar"} · Syllapin`)
   const [events, setEvents] = useState<ReviewEvent[]>(() => (preview?.events ?? []).map(withId))
   const [courseId] = useState(() => existingCourseId ?? crypto.randomUUID())
@@ -206,7 +207,7 @@ export function ReviewCalendarPage({ preview, term, existingCourseId, email, onL
   }
 
   return (
-    <PageShell email={email} onLogout={onLogout} onHome={onBack} reviewing>
+    <PageShell email={email} onLogout={onLogout} onHome={onBack} reviewing isGuest={isGuest}>
           <PageHeader
             eyebrow="Review dates"
             title={preview?.courseName || "Calendar preview"}

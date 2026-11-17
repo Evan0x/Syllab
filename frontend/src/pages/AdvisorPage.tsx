@@ -23,7 +23,7 @@ type Message = AdvisorTurn & {
   withheld?: boolean
 }
 
-export function AdvisorPage({ email, onLogout }: { email: string; onLogout: () => void }) {
+export function AdvisorPage({ email, onLogout, isGuest = false }: { email: string; onLogout: () => void; isGuest?: boolean }) {
   usePageTitle("Advisor · Syllapin")
   const [analysis, setAnalysis] = useState<AdvisorAnalysis | null>(null)
   const [error, setError] = useState<string>()
@@ -95,7 +95,7 @@ export function AdvisorPage({ email, onLogout }: { email: string; onLogout: () =
   }
 
   return (
-    <PageShell email={email} onLogout={onLogout} contained={false}>
+    <PageShell email={email} onLogout={onLogout} contained={false} isGuest={isGuest}>
       <div className="mx-auto flex w-full max-w-[1344px] flex-col gap-8 px-5 pb-16 pt-8 lg:px-8 lg:pt-10 xl:px-12">
 
         {/* Page intro */}

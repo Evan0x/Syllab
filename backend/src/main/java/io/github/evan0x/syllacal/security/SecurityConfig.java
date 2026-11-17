@@ -53,7 +53,7 @@ public class SecurityConfig {
 								"/login/oauth2/code/google",
 								"/login/oauth2/code/github")
 						.permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/verify-email")
+						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/verify-email", "/api/guest/session")
 						.permitAll()
 						.anyRequest().authenticated());
 		return http.build();

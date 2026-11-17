@@ -20,7 +20,7 @@ type ExistingCourse = {
   termEnd: string
 }
 
-export function CoursesPage({ email, onLogout }: { email: string; onLogout: () => void }) {
+export function CoursesPage({ email, onLogout, isGuest = false }: { email: string; onLogout: () => void; isGuest?: boolean }) {
   usePageTitle("Courses · Syllapin")
   const [courses, setCourses] = useState<Course[] | null>(null)
   const [loadError, setLoadError] = useState<string>()
@@ -135,7 +135,7 @@ export function CoursesPage({ email, onLogout }: { email: string; onLogout: () =
   const pendingDelete = courses?.find((c) => c.id === pendingDeleteId)
 
   return (
-    <PageShell email={email} onLogout={onLogout}>
+    <PageShell email={email} onLogout={onLogout} isGuest={isGuest}>
       <PageHeader
         eyebrow="Account"
         title="Your courses"

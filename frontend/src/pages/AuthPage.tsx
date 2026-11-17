@@ -1,6 +1,6 @@
 import { useState } from "react"
 import type { FormEvent, ReactNode } from "react"
-import { AuthError, loginAccount, registerAccount, verifyEmail, type Account } from "../api/auth.ts"
+import { AuthError, loginAccount, registerAccount, startGuestSession, verifyEmail, type Account } from "../api/auth.ts"
 import { csrfToken } from "../api/http.ts"
 import arrow from "../assets/login/arrow.svg"
 import lock from "../assets/login/lock.svg"
@@ -237,6 +237,12 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
                     Create an account
                   </button>
                 </p>
+                <div className="relative flex items-center gap-3 text-[12px] text-[var(--auth-faint)]">
+                  <span className="h-px flex-1 bg-[var(--auth-line)]" />
+                  or
+                  <span className="h-px flex-1 bg-[var(--auth-line)]" />
+                </div>
+                <GuestButton onAuthenticated={onAuthenticated} onError={setError} />
               </>
             ) : (
               <button
@@ -299,6 +305,34 @@ function OauthLink({ href, label, children }: { href: string; label: string; chi
       {children}
       {label}
     </a>
+  )
+}
+
+function GuestButton({ onAuthenticated, onError }: { onAuthenticated: (account: Account) => void; onError: (msg: string) => void }) {
+  const [loading, setLoading] = useState(false)
+
+  async function tryAsGuest() {
+    if (loading) return
+    setLoading(true)
+    try {
+      const account = await startGuestSession()
+      onAuthenticated(account)
+    } catch {
+      onError("Could not start a guest session. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={loading}
+      onClick={() => void tryAsGuest()}
+      className="text-center text-[13px] leading-5 text-[var(--auth-muted)] hover:text-[var(--auth-ink)] disabled:opacity-60"
+    >
+      {loading ? "Starting…" : "Try as Guest — 2 free uploads, no sign-up needed"}
+    </button>
   )
 }
 

@@ -4,6 +4,7 @@ import type { PreviewResponse } from "./api/syllabus.ts"
 import { privacyDocument, termsDocument } from "./content/legal.ts"
 import { AuthPage } from "./pages/AuthPage.tsx"
 import { CoursesPage } from "./pages/CoursesPage.tsx"
+import { GuestUpgradePage } from "./pages/GuestUpgradePage.tsx"
 import { LandingPage } from "./pages/LandingPage.tsx"
 import { LegalDocumentPage } from "./pages/LegalDocumentPage.tsx"
 import { ReviewCalendarPage } from "./pages/ReviewCalendarPage.tsx"
@@ -116,46 +117,30 @@ export default function App() {
     return <AuthPage onAuthenticated={setAccount} />
   }
 
-  if (window.location.pathname.replace(/\/+$/, "") === "/courses") {
-    return (
-      <CoursesPage
-        email={account.email}
-        onLogout={() => {
-          void onLogout()
-        }}
-      />
-    )
+  const path = window.location.pathname.replace(/\/+$/, "")
+  const sharedProps = { email: account.email, onLogout: () => { void onLogout() }, isGuest: account.isGuest }
+
+  if (path === "/courses") {
+    return <CoursesPage {...sharedProps} />
   }
 
-  if (window.location.pathname.replace(/\/+$/, "") === "/calendar") {
-    return (
-      <SavedCalendarPage
-        email={account.email}
-        onLogout={() => {
-          void onLogout()
-        }}
-      />
-    )
+  if (path === "/calendar") {
+    return <SavedCalendarPage {...sharedProps} />
   }
 
-  if (window.location.pathname.replace(/\/+$/, "") === "/workload") {
-    return (
-      <WorkloadPage
-        email={account.email}
-        onLogout={() => {
-          void onLogout()
-        }}
-      />
-    )
+  if (path === "/workload") {
+    return <WorkloadPage {...sharedProps} />
   }
 
-  if (window.location.pathname.replace(/\/+$/, "") === "/advisor") {
+  if (path === "/advisor") {
+    return <AdvisorPage {...sharedProps} />
+  }
+
+  if (account.isGuest && account.trialsUsed >= 2 && !reviewing) {
     return (
-      <AdvisorPage
+      <GuestUpgradePage
         email={account.email}
-        onLogout={() => {
-          void onLogout()
-        }}
+        onLogout={() => { void onLogout() }}
       />
     )
   }
@@ -169,11 +154,14 @@ export default function App() {
             void onLogout()
           }}
           existingCourse={existingCourse}
+          isGuest={account.isGuest}
+          trialsUsed={account.trialsUsed}
           onPreview={(result, nextTerm, courseId) => {
             setPreview(result)
             setTerm(nextTerm)
             setExistingCourseId(courseId ?? null)
             setReviewing(true)
+            void currentAccount().then((next) => { if (next) setAccount(next) })
           }}
         />
       </div>
@@ -183,6 +171,7 @@ export default function App() {
           term={term}
           existingCourseId={existingCourseId}
           email={account.email}
+          isGuest={account.isGuest}
           onLogout={() => {
             void onLogout()
           }}

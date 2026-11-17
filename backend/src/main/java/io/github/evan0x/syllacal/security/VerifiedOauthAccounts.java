@@ -25,16 +25,16 @@ public class VerifiedOauthAccounts {
 		if (existing.isPresent()) {
 			AccountRepository.StoredAccount account = existing.get();
 			accounts.markEmailVerified(account.id());
-			return Optional.of(new AccountUser(account.id(), account.email(), account.passwordHash(), true));
+			return Optional.of(new AccountUser(account.id(), account.email(), account.passwordHash(), true, false, 0));
 		}
 		UUID id = UUID.randomUUID();
 		if (!accounts.insertVerified(id, normalized)) {
 			return accounts.findByEmail(normalized)
 					.map(account -> {
 						accounts.markEmailVerified(account.id());
-						return new AccountUser(account.id(), account.email(), account.passwordHash(), true);
+						return new AccountUser(account.id(), account.email(), account.passwordHash(), true, false, 0);
 					});
 		}
-		return Optional.of(new AccountUser(id, normalized, null, true));
+		return Optional.of(new AccountUser(id, normalized, null, true, false, 0));
 	}
 }

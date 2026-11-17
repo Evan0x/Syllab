@@ -6,6 +6,7 @@ import io.github.evan0x.syllacal.extraction.EventExtractor;
 import io.github.evan0x.syllacal.extraction.ExtractedEvent;
 import io.github.evan0x.syllacal.extraction.ExtractionException;
 import io.github.evan0x.syllacal.pdf.PdfTextExtractor;
+import io.github.evan0x.syllacal.security.AccountRepository;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -14,6 +15,7 @@ import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -47,6 +49,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 		SyllabusControllerTest.FakeExtractor.class
 })
 class SyllabusControllerTest {
+
+	@MockitoBean
+	private AccountRepository accountRepository;
 
 	@Autowired
 	private MockMvc mockMvc;
