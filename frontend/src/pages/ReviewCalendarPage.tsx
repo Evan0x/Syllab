@@ -1,6 +1,7 @@
 import { ArrowLeft, Download, LoaderCircle, Plus, TriangleAlert } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
-import { saveReviewedCalendar } from "../api/events.ts"
+import { listEvents, saveReviewedCalendar } from "../api/events.ts"
+import type { StoredEvent } from "../api/events.ts"
 import { downloadBlob, exportCalendar, isAbortError, SyllabusApiError } from "../api/syllabus.ts"
 import type { CalendarEvent, PreviewResponse } from "../api/syllabus.ts"
 import { Button } from "../components/Button.tsx"
@@ -31,6 +32,7 @@ type ReviewTerm = {
 type ReviewCalendarPageProps = {
   preview: PreviewResponse | null
   term: ReviewTerm | null
+  existingCourseId?: string | null
   email: string
   onLogout: () => void
   onBack: () => void
@@ -38,6 +40,7 @@ type ReviewCalendarPageProps = {
 
 type ReviewEvent = CalendarEvent & {
   id: string
+  _existing?: boolean
 }
 
 type EventGroup = {
@@ -48,10 +51,11 @@ type EventGroup = {
 
 const MISSING = "Not specified"
 
-export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: ReviewCalendarPageProps) {
+export function ReviewCalendarPage({ preview, term, existingCourseId, email, onLogout, onBack }: ReviewCalendarPageProps) {
   usePageTitle(`${preview?.courseName || "Calendar"} · Syllapin`)
   const [events, setEvents] = useState<ReviewEvent[]>(() => (preview?.events ?? []).map(withId))
-  const [courseId] = useState(() => crypto.randomUUID())
+  const [courseId] = useState(() => existingCourseId ?? crypto.randomUUID())
+  const [existingLoaded, setExistingLoaded] = useState(!existingCourseId)
   const [showCalendar, setShowCalendar] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -75,6 +79,21 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
   const semester = term?.termStart && term.termEnd ? formatTermRange(term.termStart, term.termEnd) : null
   const editing = editor && editor !== "add" ? events.find((event) => event.id === editor) : undefined
   const pendingDelete = events.find((event) => event.id === pendingDeleteId)
+
+  useEffect(() => {
+    if (!existingCourseId) return
+    listEvents()
+      .then((all) => {
+        const existing = all
+          .filter((e) => e.courseId === existingCourseId)
+          .map(storedToReviewEvent)
+        if (existing.length > 0) {
+          setEvents((prev) => [...prev, ...existing])
+        }
+      })
+      .catch(() => {})
+      .finally(() => setExistingLoaded(true))
+  }, [])
 
   useEffect(() => {
     if (saved) {
@@ -246,6 +265,11 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
                   </div>
                 ) : null}
               </div>
+              {!existingLoaded ? (
+                <p className="text-[12px] text-muted" role="status" aria-live="polite">
+                  Loading previously saved events…
+                </p>
+              ) : null}
               <p className={`text-[12px] ${saveError ? "text-error" : "text-muted"}`} role={saveError ? "alert" : "status"} aria-live="polite">
                 {saving
                   ? "Saving to your calendar…"
@@ -253,7 +277,9 @@ export function ReviewCalendarPage({ preview, term, email, onLogout, onBack }: R
                     ? saveError
                     : saved
                       ? "Saved to your calendar. Workload and Advisor can use these dates."
-                      : "Save to keep these dates on Syllapin. Export is optional."}
+                      : existingCourseId
+                        ? "Review new and previously saved events, then save to replace the course calendar."
+                        : "Save to keep these dates on Syllapin. Export is optional."}
               </p>
               {showCalendar ? (
                 <AcademicCalendar
@@ -471,6 +497,11 @@ function EventRow({
             {event.title?.trim() || "Untitled event"}
           </h3>
           <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+            {event._existing ? (
+              <span className="rounded-md bg-well px-1.5 py-0.5 text-[10px] text-muted">
+                Previously saved
+              </span>
+            ) : null}
             <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${typeClass(event.type)}`}>
               {event.type?.trim() ? formatType(event.type) : MISSING}
             </span>
@@ -578,6 +609,22 @@ function fieldsFromEvent(event: ReviewEvent): EventFields {
 
 function withId(event: CalendarEvent): ReviewEvent {
   return { ...event, id: crypto.randomUUID() }
+}
+
+function storedToReviewEvent(event: StoredEvent): ReviewEvent {
+  return {
+    id: event.id,
+    title: event.title,
+    type: event.type,
+    date: event.date,
+    time: event.time,
+    endTime: event.endTime,
+    location: event.location,
+    weightPercent: event.weightPercent,
+    confidence: event.confidence,
+    sourceQuote: event.sourceQuote,
+    _existing: true,
+  }
 }
 
 function Detail({ label, value }: { label: string; value: string | null }) {

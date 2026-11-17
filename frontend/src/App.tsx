@@ -3,6 +3,7 @@ import { currentAccount, logoutAccount, type Account } from "./api/auth.ts"
 import type { PreviewResponse } from "./api/syllabus.ts"
 import { privacyDocument, termsDocument } from "./content/legal.ts"
 import { AuthPage } from "./pages/AuthPage.tsx"
+import { CoursesPage } from "./pages/CoursesPage.tsx"
 import { LandingPage } from "./pages/LandingPage.tsx"
 import { LegalDocumentPage } from "./pages/LegalDocumentPage.tsx"
 import { ReviewCalendarPage } from "./pages/ReviewCalendarPage.tsx"
@@ -13,6 +14,33 @@ import { WorkloadPage } from "./pages/WorkloadPage.tsx"
 type ReviewTerm = {
   termStart: string
   termEnd: string
+}
+
+type ExistingCourse = {
+  id: string
+  courseName: string
+  termStart: string
+  termEnd: string
+}
+
+function readReupload(): ExistingCourse | null {
+  try {
+    const stored = sessionStorage.getItem("reupload")
+    if (!stored) return null
+    sessionStorage.removeItem("reupload")
+    const parsed: unknown = JSON.parse(stored)
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "id" in parsed &&
+      "courseName" in parsed &&
+      typeof (parsed as Record<string, unknown>).id === "string" &&
+      typeof (parsed as Record<string, unknown>).courseName === "string"
+    ) {
+      return parsed as ExistingCourse
+    }
+  } catch {}
+  return null
 }
 
 function legalDocument() {
@@ -32,6 +60,8 @@ export default function App() {
   const [preview, setPreview] = useState<PreviewResponse | null>(null)
   const [term, setTerm] = useState<ReviewTerm | null>(null)
   const [reviewing, setReviewing] = useState(false)
+  const [existingCourse] = useState<ExistingCourse | null>(readReupload)
+  const [existingCourseId, setExistingCourseId] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -60,6 +90,7 @@ export default function App() {
     setPreview(null)
     setTerm(null)
     setReviewing(false)
+    setExistingCourseId(null)
     setAccount(null)
   }
 
@@ -83,6 +114,17 @@ export default function App() {
 
   if (account === null) {
     return <AuthPage onAuthenticated={setAccount} />
+  }
+
+  if (window.location.pathname.replace(/\/+$/, "") === "/courses") {
+    return (
+      <CoursesPage
+        email={account.email}
+        onLogout={() => {
+          void onLogout()
+        }}
+      />
+    )
   }
 
   if (window.location.pathname.replace(/\/+$/, "") === "/calendar") {
@@ -126,9 +168,11 @@ export default function App() {
           onLogout={() => {
             void onLogout()
           }}
-          onPreview={(result, nextTerm) => {
+          existingCourse={existingCourse}
+          onPreview={(result, nextTerm, courseId) => {
             setPreview(result)
             setTerm(nextTerm)
+            setExistingCourseId(courseId ?? null)
             setReviewing(true)
           }}
         />
@@ -137,11 +181,15 @@ export default function App() {
         <ReviewCalendarPage
           preview={preview}
           term={term}
+          existingCourseId={existingCourseId}
           email={account.email}
           onLogout={() => {
             void onLogout()
           }}
-          onBack={() => setReviewing(false)}
+          onBack={() => {
+            setReviewing(false)
+            setExistingCourseId(null)
+          }}
         />
       ) : null}
     </>

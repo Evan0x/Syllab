@@ -99,6 +99,7 @@ export function SavedCalendarPage({ email, onLogout }: { email: string; onLogout
         <NextSteps
           items={[
             { href: "/upload", label: "Add a course" },
+            { href: "/courses", label: "Manage courses" },
             { href: "/workload", label: "This week’s workload" },
             { href: "/advisor", label: "Ask the advisor" },
           ]}

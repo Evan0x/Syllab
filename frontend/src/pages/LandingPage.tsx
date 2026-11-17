@@ -15,10 +15,18 @@ import { usePageTitle } from "../lib/pageTitle.ts"
 
 type Phase = "form" | "loading" | "error"
 
+type ExistingCourse = {
+  id: string
+  courseName: string
+  termStart: string
+  termEnd: string
+}
+
 type LandingPageProps = {
   email: string
   onLogout: () => void
-  onPreview: (preview: PreviewResponse, term: { termStart: string; termEnd: string }) => void
+  existingCourse?: ExistingCourse | null
+  onPreview: (preview: PreviewResponse, term: { termStart: string; termEnd: string }, existingCourseId?: string) => void
 }
 
 const MISSING_FILE = "No file selected. Upload a syllabus PDF before generating your calendar."
@@ -26,14 +34,14 @@ const MISSING_COURSE = "Enter a course name to label your events."
 const MISSING_START = "Enter the first day of your semester."
 const MISSING_END = "Enter the last day of your semester."
 
-export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
+export function LandingPage({ email, onLogout, existingCourse, onPreview }: LandingPageProps) {
   usePageTitle("Upload syllabus · Syllapin")
   const [file, setFile] = useState<File | null>(null)
   const [problem, setProblem] = useState<FileProblem | null>(null)
   const [missingFile, setMissingFile] = useState<string>()
-  const [courseName, setCourseName] = useState("")
-  const [termStart, setTermStart] = useState("")
-  const [termEnd, setTermEnd] = useState("")
+  const [courseName, setCourseName] = useState(existingCourse?.courseName ?? "")
+  const [termStart, setTermStart] = useState(existingCourse?.termStart ?? "")
+  const [termEnd, setTermEnd] = useState(existingCourse?.termEnd ?? "")
   const [courseError, setCourseError] = useState<string>()
   const [startError, setStartError] = useState<string>()
   const [endError, setEndError] = useState<string>()
@@ -105,7 +113,7 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
         signal: controller.signal,
       })
       setPhase("form")
-      onPreview(result, { termStart, termEnd })
+      onPreview(result, { termStart, termEnd }, existingCourse?.id)
     } catch (error) {
       if (isAbortError(error)) {
         setPhase("form")
@@ -162,12 +170,19 @@ export function LandingPage({ email, onLogout, onPreview }: LandingPageProps) {
             {phase === "form" ? (
               <form noValidate onSubmit={(event) => void submit(event)} className="grid grid-cols-1 gap-6 p-5 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-4 lg:p-6">
                 <div className="flex items-center justify-between lg:col-span-2">
-                  <h2 className="text-[15px] font-medium tracking-[-0.01em] text-ink">Create your calendar</h2>
+                  <h2 className="text-[15px] font-medium tracking-[-0.01em] text-ink">
+                    {existingCourse ? `Replace syllabus for ${existingCourse.courseName}` : "Create your calendar"}
+                  </h2>
                   <p className="hidden items-center gap-[7px] text-[12px] text-muted lg:flex">
                     <CalendarDays size={14} strokeWidth={1.75} aria-hidden />
                     PDF → .ics
                   </p>
                 </div>
+                {existingCourse ? (
+                  <p className="text-[12px] leading-[1.5] text-muted lg:col-span-2">
+                    Upload a new syllabus PDF. You'll review the extracted dates before anything is replaced.
+                  </p>
+                ) : null}
 
                 <div className="flex flex-col gap-2.5 lg:gap-3">
                   <label htmlFor="syllabus-file" className="text-[13px] text-ink">
